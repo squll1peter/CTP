@@ -30,6 +30,9 @@ It is preferred because it works with dynamic IP addresses.
 			<attr name="maxThreads" required="yes" default="20">
 				<helptext>The maximum number of concurrent threads allowed on the server</helptext>
 			</attr>
+			<attr name="enableStageProfiling" required="no" default="no" options="yes|no">
+				<helptext>Enable per-stage timing counters shown on the Status page</helptext>
+			</attr>
 			<attr name="requireAuthentication" required="no" default="no" options="yes|no"/>
 			<attr name="usersClassName" required="no" default="org.rsna.server.UsersXmlFileImpl"/>
 
@@ -80,6 +83,41 @@ It is preferred because it works with dynamic IP addresses.
 			</attr>
 			<attr name="httpsPort" required="yes" default="443">
 				<helptext>The HTTPS port to which to redirect requests.</helptext>
+			</attr>
+		</Plugin>
+
+		<Plugin>
+			<attr name="name" required="yes" default="StableNotificationPlugin"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.plugin.StableNotificationPlugin" editable="no"/>
+			<attr name="id" required="yes" default="StableNotify">
+				<helptext>Unique identifier referenced by the StabilityMonitorProcessor targetID attribute.</helptext>
+			</attr>
+			<attr name="baseUrl" required="yes" default="">
+				<helptext>Full REST endpoint URL, e.g. https://example.com/api/notify</helptext>
+			</attr>
+			<attr name="method" required="no" default="POST" options="GET|POST|PUT">
+				<helptext>HTTP method used for the call.</helptext>
+			</attr>
+			<attr name="contentType" required="no" default="json" options="json|form">
+				<helptext>Body format for POST/PUT: json (application/json) or form (application/x-www-form-urlencoded).</helptext>
+			</attr>
+			<attr name="arguments" required="no" default="">
+				<helptext>Semicolon-delimited key:dicomtag pairs resolved dynamically from the representative DICOM object, e.g. patientID:00100020;studyUID:0020000D</helptext>
+			</attr>
+			<attr name="otherArguments" required="no" default="">
+				<helptext>Semicolon-delimited key=value static pairs always included in the call, e.g. source=CTP;facility=HOSP1</helptext>
+			</attr>
+			<attr name="timeout" required="no" default="5000">
+				<helptext>HTTP connect and read timeout in milliseconds.</helptext>
+			</attr>
+			<attr name="retry" required="no" default="3">
+				<helptext>Number of retry attempts on failure before giving up.</helptext>
+			</attr>
+			<attr name="enable" required="no" default="yes" options="yes|no">
+				<helptext>Set to no to disable notifications without removing the plugin from config.</helptext>
+			</attr>
+			<attr name="logDetails" required="no" default="no" options="yes|no">
+				<helptext>If yes, log the full response body on successful calls as well as failures.</helptext>
 			</attr>
 		</Plugin>
 
@@ -601,6 +639,27 @@ It is preferred because it works with dynamic IP addresses.
 			</attr>
 			<attr name="quarantine" required="yes" default="quarantines/EmailService"/>
 			<attr name="quarantineTimeDepth" required="no" default="0"/>
+		</Processor>
+
+		<Processor>
+			<attr name="name" required="yes" default="StabilityMonitorProcessor"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.stdstages.StabilityMonitorProcessor" editable="no"/>
+			<attr name="id" required="no" default=""/>
+			<attr name="root" required="yes" default="roots/StabilityMonitorProcessor">
+				<helptext>Working directory; representative DICOM files are stored temporarily in root/rep/</helptext>
+			</attr>
+			<attr name="level" required="no" default="series" options="series|study|patient">
+				<helptext>Grouping level for stability detection.</helptext>
+			</attr>
+			<attr name="targetID" required="yes" default="StableNotify">
+				<helptext>The id of the StableNotificationPlugin that will fire the REST call.</helptext>
+			</attr>
+			<attr name="timeout" required="no" default="60">
+				<helptext>Inactivity timeout in seconds. The REST call fires when no new objects have arrived for this long.</helptext>
+			</attr>
+			<attr name="dicomScript" required="no" default="">
+				<helptext>Optional CTP filter script. Only DICOM objects that match the script are tracked; non-matching and non-DICOM objects still pass through.</helptext>
+			</attr>
 		</Processor>
 
 		<StorageService>

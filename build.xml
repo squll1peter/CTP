@@ -25,22 +25,19 @@
 		<pathelement location="${libraries}/log4j/log4j-core-2.17.2.jar"/>
 		<pathelement location="${libraries}/edtftpj.jar"/>
 		<pathelement location="${libraries}/jdbm.jar"/>
-		<pathelement location="${libraries}/commons-compress-1.0.jar"/>
+		<pathelement location="${libraries}/commons-compress-1.27.1.jar"/>
 		<pathelement location="${libraries}/imageio/jai_imageio-1.2-pre-dr-b04.jar"/>
 		<pathelement location="${libraries}/imageio/pixelmed_codec.jar"/>
 		<pathelement location="${libraries}/email/activation.jar"/>
 		<pathelement location="${libraries}/email/mailapi.jar"/>
 		<pathelement location="${libraries}/email/mail.jar"/>
 		<pathelement location="${libraries}/ftp/commons-logging-1.2.jar"/>
-		<pathelement location="${libraries}/ftp/commons-net-3.3.jar"/>
-		<pathelement location="${libraries}/ftp/commons-vfs2-2.0.jar"/>
-		<pathelement location="${libraries}/ftp/jsch-0.1.53.jar"/>
+		<pathelement location="${libraries}/ftp/commons-net-3.11.1.jar"/>
+		<pathelement location="${libraries}/ftp/commons-vfs2-2.9.0.jar"/>
+		<pathelement location="${libraries}/ftp/jsch-0.2.21.jar"/>
 	</path>
 
-	<property name="jarclasspath" value="
-		libraries/util.jar 
-		libraries/log4j.jar
-	"/>
+	<property name="jarclasspath" value="libraries/util.jar libraries/log4j/log4j-1.2-api-2.17.2.jar libraries/log4j/log4j-api-2.17.2.jar libraries/log4j/log4j-core-2.17.2.jar"/>
 
 	<target name="clean">
 		<delete dir="${build}" failonerror="false"/>
@@ -67,6 +64,7 @@
 		<javac destdir="${build}" optimize="on"
 				classpathref="classpath"
 				includeantruntime="false"
+				source="21" target="21"
 				debug="true" debuglevel="lines,vars,source">
 			<src path="${java}"/>
 			<compilerarg value="-Xlint:unchecked"/>
@@ -107,7 +105,7 @@
 				<attribute name="Main-Class" value="org.rsna.ctp.ClinicalTrialProcessor"/>
 	            <attribute name="Date" value="${today} at ${now}"/>
 				<attribute name="Java-Version" value="${java.version}"/>
-				<attribute name="Class-Path" value="util.jar log4j.jar"/>
+				<attribute name="Class-Path" value="util.jar log4j/log4j-1.2-api-2.17.2.jar log4j/log4j-api-2.17.2.jar log4j/log4j-core-2.17.2.jar"/>
 			</manifest>
 			<fileset dir="${build}"
 				includes="**"
@@ -154,6 +152,52 @@
 				includes="${installer}/Installer** CTP/** config/**"/>
 		</jar>
 
+	</target>
+
+	<!-- ============================================================ -->
+	<!-- Test infrastructure (Stage 0)                              -->
+	<!-- ============================================================ -->
+
+	<path id="test-classpath">
+		<path refid="classpath"/>
+		<pathelement location="${build}"/>
+		<pathelement location="${libraries}/test/junit-4.13.2.jar"/>
+		<pathelement location="${libraries}/test/hamcrest-core-1.3.jar"/>
+		<pathelement location="${libraries}/test/mockito-core-5.14.2.jar"/>
+		<pathelement location="${libraries}/test/byte-buddy-1.15.10.jar"/>
+		<pathelement location="${libraries}/test/objenesis-3.4.jar"/>
+	</path>
+
+	<target name="compile-tests" depends="compile">
+		<mkdir dir="${build}/test-classes"/>
+		<javac destdir="${build}/test-classes"
+				srcdir="${source}/test/java"
+				classpathref="test-classpath"
+				includeantruntime="false"
+				source="21" target="21"
+				debug="true" debuglevel="lines,vars,source">
+			<compilerarg value="-Xlint:unchecked"/>
+		</javac>
+	</target>
+
+	<target name="test" depends="compile-tests">
+		<junit fork="true" haltonfailure="true" printsummary="yes">
+			<!-- Required for Mockito byte-buddy on JDK 9+ -->
+			<jvmarg value="-javaagent:${basedir}/libraries/test/byte-buddy-agent-1.15.10.jar"/>
+			<jvmarg value="-Dnet.bytebuddy.experimental=true"/>
+			<jvmarg value="--add-opens"/>
+			<jvmarg value="java.base/java.lang=ALL-UNNAMED"/>
+			<jvmarg value="--add-opens"/>
+			<jvmarg value="java.base/java.util=ALL-UNNAMED"/>
+			<classpath>
+				<path refid="test-classpath"/>
+				<pathelement location="${build}/test-classes"/>
+			</classpath>
+			<batchtest>
+				<fileset dir="${build}/test-classes" includes="**/*Test.class"/>
+			</batchtest>
+			<formatter type="plain" usefile="false"/>
+		</junit>
 	</target>
 
 	<target name="javadocs">
