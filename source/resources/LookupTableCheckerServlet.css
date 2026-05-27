@@ -1,11 +1,14 @@
 body {
 	margin-top:0;
 	margin-right:0;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	background: #eef4fb;
 }
 
 h1 {
 	text-align:center;
-	margin-top:10;
+	margin-top:12px;
+	color: #1f5f94;
 }
 
 h2 {
@@ -14,25 +17,30 @@ h2 {
 	margin:0;
 	padding:0;
 	font-weight:bold;
+	color: #1f5f94;
 }
 
 input {
 	width:400px;
 	font-family: monospace;
+	border: 1px solid #93afca;
+	border-radius: 3px;
 }
 
 p {
-	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	padding-top: 5px;
 	padding:bottom: 15px;
 }
 
 th {
-	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	text-align: left;
 	font-weight: bold;
 	padding-left: 10px;
 	padding-right:10px;
+	background: #2f6fa5;
+	color: #ffffff;
 }
 
 table td {
@@ -40,4 +48,5 @@ table td {
 	border: thin solid gray;
 	padding-left:3px;
 	padding-right: 3px;
+	background: #ffffff;
 }

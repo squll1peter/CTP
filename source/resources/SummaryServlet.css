@@ -1,61 +1,75 @@
 body {
 	overflow: hidden;
+	margin: 0;
+	padding: 0;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	background: #edf3fa;
 }
 
 h1 {
 	text-align:center;
-	margin-top:10;
+	margin-top:14px;
+	margin-bottom: 12px;
+	color: #1f5f94;
+	font-size: 36px;
 }
 
 h2 {
-	color:#2977b9;
-	font-family: Arial, Helvetica, sans-serif;
+	color:#1f5f94;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	text-align:left;
-	font-size:12pt;
-	margin:0;
+	font-size: 23px;
+	margin:8px 0 4px 0;
 	padding:0;
 	font-weight:bold;
 }
 
 h3 {
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	text-align:left;
-	font-size:12pt;
+	font-size: 20px;
 	font-weight:bold;
 	margin-top: 0px;
 	padding-top: 0px;
 }
 
 table {
-	margin-bottom:20px;
+	margin-bottom:22px;
+	border-collapse: collapse;
+	box-shadow: 0 1px 3px rgba(12, 43, 66, 0.14);
 }
 
 th {
-	font-family: Arial, Helvetica, Verdana, sans-serif;
-	padding-left: 10px;
-	padding-right: 10px;
-	background: #2977b9;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	padding: 8px 12px;
+	background: #2f6fa5;
 	color: white;
+	font-size: 18px;
+	font-weight: 700;
+	border: 1px solid #265a85;
 }
 
 td {
-	background: white;
-	font-family: Arial, Helvetica, Verdana, sans-serif;
+	background: #ffffff;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	font-weight: normal;
+	font-size: 17px;
+	padding: 6px 10px;
+	border: 1px solid #d5e1ee;
 }
 
 th.name {
 	text-align: left;
-	padding-left: 10px;
-	padding-right: 10px;
-	font-family: Arial, Helvetica, Verdana, sans-serif;
+	padding-left: 12px;
+	padding-right: 12px;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	font-weight: bold;
 }
 
 td.name {
 	text-align: left;
-	padding-left: 10px;
-	padding-right: 10px;
+	padding-left: 12px;
+	padding-right: 12px;
 }
 
 .number {
@@ -68,22 +82,36 @@ td.name {
 
 div.status {
 	overflow: auto;
-	padding-left: 10px;
-	padding-right: 10px;
+	padding: 14px;
+	background: #f8fbff;
+	border: 1px solid #d5e1ee;
+	border-radius: 8px;
+	box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
 }
 
 p.link {
 	text-align: center;
-	margin-top: 5px;
+	margin-top: 10px;
 	margin-bottom: 0;
 }
 
 p.link input {
-	padding: 5px;
-	font-family: Arial, Helvetica, Verdana, sans-serif;
+	padding: 9px 14px;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	font-weight: bold;
+	border: 1px solid #8fb0cf;
+	background: #ffffff;
+	border-radius: 4px;
+	font-size: 16px;
+	cursor: pointer;
 }
 
 .summarylink {
-	width: 350px;
+	width: 430px;
+}
+
+hr {
+	border: none;
+	border-top: 1px solid #bdd0e3;
+	margin: 14px 0;
 }

@@ -1,7 +1,8 @@
 h1 {
 	text-align:center;
-	margin-top:10;
+	margin-top:12px;
 	margin-bottom:10;
+	color: #1f5f94;
 }
 
 table {
@@ -9,15 +10,18 @@ table {
 }
 
 th {
-	font-family: Arial, Helvetica, Verdana, sans-serif;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	padding: 5px;
+	background: #2f6fa5;
+	color: #ffffff;
 }
 
 td {
 	background-color: white;
 	padding: 5px;
-	font-family: Arial, Helvetica, Verdana, sans-serif;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	cursor: pointer;
+	border-bottom: 1px solid #e7edf5;
 }
 
 td.button {
@@ -32,7 +36,7 @@ td.button {
 
 a {
 	text-decoration:none;
-	color:black;
+	color:#1d2a36;
 }
 a:visited { color:black; }
 a:hover { text-decoration:underline; }

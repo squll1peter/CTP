@@ -1,13 +1,10 @@
 var user = null;
 var split = null;
 var ctpServer = null;
+var splitSaveTimer = null;
+var splitStoreKey = "ctp.leftpane.width";
 
 function loaded() {
-
-	if (!IE) {
-		var line2 = document.getElementById("line2");
-		if (line2) line2.style.marginTop = "-2px";
-	}
 
 	user = new User();
 	if (user.isLoggedIn) {
@@ -20,7 +17,10 @@ function loaded() {
 	}
 
 	//leftDiv, sliderDiv, rightDiv, fillHeight, sliderPosition, forceTopForIE, leftMin, rightMin, changeHandler
-	split = new HorizontalSplit("left", "center", "right", true, 185, false, 1, 120);
+	split = new HorizontalSplit("left", "center", "right", true, 260, false, 160, 260, onSplitChanged);
+	restoreSplitPosition();
+	var slider = document.getElementById("center");
+	if (slider) slider.ondblclick = toggleLeftPane;
 
 	ctpServer = new CTPServer();
 	replaceContent("serverip", ctpServer.ip);
@@ -49,6 +49,32 @@ window.onload = loaded;
 
 function resize() {
 	if (split) split.positionSlider();
+}
+
+function onSplitChanged() {
+	if (splitSaveTimer) clearTimeout(splitSaveTimer);
+	splitSaveTimer = setTimeout(saveSplitPosition, 120);
+}
+
+function saveSplitPosition() {
+	if (!split) return;
+	try { localStorage.setItem(splitStoreKey, split.leftWidth); }
+	catch (ignore) { }
+}
+
+function restoreSplitPosition() {
+	if (!split) return;
+	try {
+		var value = parseInt(localStorage.getItem(splitStoreKey), 10);
+		if (!isNaN(value) && value > 0) split.setSlider(value);
+	}
+	catch (ignore) { }
+}
+
+function toggleLeftPane() {
+	if (!split) return;
+	if (split.leftWidth <= (split.lmin + 2)) split.moveSliderTo(260);
+	else split.moveSliderTo(split.lmin);
 }
 
 //************************************************
@@ -135,6 +161,11 @@ function showSessionPopup() {
 //Load the configuration in the left pane
 //************************************************
 function loadConfigurationTree() {
+	if (!ctpServer || !ctpServer.configXML) {
+		replaceContent("Plugins", "");
+		replaceContent("Pipelines", "");
+		return;
+	}
 	loadPlugins();
 	loadPipelines();
 }

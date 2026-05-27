@@ -1,69 +1,74 @@
-A { color: black; }
+A { color: #1d3650; }
 A:link { text-decoration: none; }
 A:hover { text-decoration: none; }
-A:visited { color: black; text-decoration: none;}
-div.L1 A { color: black;}
-div.L1 A:visited { color: black; text-decoration: none;}
-div.L1 A { color: #2977b;}
-div.L1x A { color: #2977b9;}
-div.L1x A:visited { color: #2977b9; text-decoration: none;}
-div.L1y A { color: #2977b9;}
-div.L1y A:visited { color: #2977b9; text-decoration: none;}
+A:visited { color: #1d3650; text-decoration: none;}
+div.L1 A { color: #1d3650;}
+div.L1 A:visited { color: #1d3650; text-decoration: none;}
+div.L1 A { color: #1f5f94;}
+div.L1x A { color: #1f5f94;}
+div.L1x A:visited { color: #1f5f94; text-decoration: none;}
+div.L1y A { color: #1f5f94;}
+div.L1y A:visited { color: #1f5f94; text-decoration: none;}
 A.TitleLink { font-weight: bold; }
 
 body {
 	margin: 0;
 	padding: 0;
 	overflow: hidden;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
+	background: radial-gradient(circle at top left, #f5faff 0%, #e2edf9 62%);
 }
 
 div.header {
-	background:#ffffff;
+	background: linear-gradient(180deg, #ffffff, #eaf3fc);
 	margin: 0;
 	padding: 0;
-	padding-bottom: 3px;
+	padding-bottom: 8px;
 	text-align: left;
 	border: none;
-	border-bottom: thin solid #2977b9;
-	/*overflow: hidden;*/
+	border-bottom: 1px solid #9bb5d0;
 	white-space: nowrap;
-	height: 33px;
+	height: 42px;
+	box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset, 0 2px 8px rgba(26, 63, 101, 0.08);
 }
 
 div.headerLeft {
-	margin-top: 4px;
-	margin-left: 10px;
+	margin-top: 3px;
+	margin-left: 12px;
 	float: left;
 }
 
 div.headerRight {
-	margin-top: 6px;
+	margin-top: 8px;
+	margin-right: 12px;
 	float: right;
 }
 
 span.ctpname {
 	text-align:left;
-	font-size: 18pt;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 24px;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
 	font-weight: bold;
-	color: #2977b9;
+	letter-spacing: 0.2px;
+	color: #1d4f79;
 }
 
 .headerText {
-	font-size: 10pt;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-weight: bold;
-	color: black;
+	font-size: 12px;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: 600;
+	color: #1c3248;
 }
 
 div.footer {
 	border: none;
-	border-top: thin solid #2977b9;
+	border-top: 1px solid #9bb5d0;
 }
 
 div.footerlogo {
 	background-color:#FFFFFF;
 	clear:both;
+	padding-left: 8px;
 }
 
 div.footerlogo span.productname {
@@ -75,10 +80,10 @@ div.footerlogo span.productname {
 }
 
 div.footerRight {
-	background:url(/icons/FooterBackground.jpg);
-	height:29px;
+	background: linear-gradient(180deg, #2b6393, #214e75);
+	height:31px;
 	width:100%;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
 	color:white;
 	font-size:12px;
 }
@@ -86,7 +91,7 @@ div.footerRight {
 div.footerRight p.line1 {
 	text-align:right;
 	margin: 0px;
-	padding: 0px;
+	padding: 1px 12px 0 0;
 }
 
 div.footerRight p.line2 {
@@ -104,60 +109,141 @@ div.footerRight a:visited {
 }
 
 div.rightpane {
-	color: black;
+	color: #1d2a36;
 	border-style: none;
-	overflow: none; /*auto;*/
+	overflow: hidden;
 }
 
 div.rightpane iframe {
 	width: 100%;
 	height: 100%;
 	border-style: none;
+	background: #f8fbff;
 }
 
 .L1 {
-	font-size: 12pt;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-weight: bold;
-	color: #2977b9;
+	font-size: 18px;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: 700;
+	color: #1d527f;
 	margin-left: 10px;
-	margin-top: 15px;
-	margin-bottom: 10px;
+	margin-top: 14px;
+	margin-bottom: 9px;
 	cursor: default;
+	border-bottom: 1px solid #c4d7ea;
+	padding-bottom: 4px;
 }
 
 .L1x {
-	font-size: 10pt;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-weight: bold;
-	color: #2977b9;
-	margin-left: 20px;
-	margin-top: 5px;
-	margin-bottom: 0px;
+	font-size: 14px;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: 700;
+	color: #1f5a89;
+	margin-left: 14px;
+	margin-top: 7px;
+	margin-bottom: 1px;
 	cursor: default;
 }
 
 .L1y {
-	font-size: 10pt;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-weight: bold;
-	color: #2977b9;
-	margin-left: 20px;
-	margin-bottom: 0px;
+	font-size: 14px;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: 700;
+	color: #1f5a89;
+	margin-left: 14px;
+	margin-bottom: 1px;
 	cursor: default;
 }
 
 .L2 {
-	font-size: 10pt;
-	font-family: Verdana, Arial, Helvetica, sans-serif;
-	font-weight: normal;
-	color: black;
-	margin-left: 20px;
+	font-size: 13px;
+	font-family: "IBM Plex Sans", "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: 500;
+	color: #1e2f3f;
+	margin-left: 14px;
+	line-height: 1.3;
+	padding: 1px 2px;
+}
+
+.L2 a {
+	display: inline-block;
+	width: 100%;
+	padding: 4px 8px;
+	border-radius: 6px;
+}
+
+.L2 a:hover {
+	background: rgba(47,111,165,0.13);
+	color: #154c79;
 }
 
 .leftpane {
-	background:#b9d0ed;
+	background: linear-gradient(180deg, #ecf4fc, #dce9f7);
+	border-right: none;
+	box-shadow: none;
 }
 .rightpane {
-	background:#b9d0ed;
+	background: #f6fafe;
+}
+
+#center {
+	position: absolute;
+	background: linear-gradient(to right, #8aaecf, #356f9d, #8aaecf);
+	box-shadow: inset 1px 0 0 rgba(255,255,255,0.4), inset -1px 0 0 rgba(15,54,88,0.25);
+}
+
+#center::after {
+	content: "";
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 4px;
+	height: 58px;
+	border-radius: 4px;
+	background: rgba(255,255,255,0.72);
+	box-shadow: 0 0 0 1px rgba(40,85,123,0.35);
+	pointer-events: none;
+}
+
+#center:hover,
+#center.dragging {
+	background: linear-gradient(to right, #9ab9d4, #3c79a9, #9ab9d4);
+}
+
+body.is-dragging-split,
+body.is-dragging-split * {
+	cursor: col-resize !important;
+}
+
+#General,
+#Admin,
+#Plugins,
+#Pipelines {
+	padding-right: 10px;
+	margin: 8px;
+	background: rgba(255,255,255,0.32);
+	border: 1px solid rgba(155,181,208,0.65);
+	border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(23,61,94,0.05);
+}
+
+div.header a,
+div.footer a,
+.L2 a,
+.L1x a,
+.L1y a {
+	transition: color 0.12s ease-in-out;
+}
+
+div.header a:hover,
+div.footer a:hover,
+.L2 a:hover,
+.L1x a:hover,
+.L1y a:hover {
+	color: #114b79;
+}
+
+#main {
+	background: linear-gradient(180deg, #ecf3fb, #e5eef8);
 }
