@@ -62,10 +62,10 @@ public class DBVerifierServlet extends CTPServlet {
 	 * @param res the response object
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -108,7 +108,7 @@ public class DBVerifierServlet extends CTPServlet {
 	}
 
 	private String makeList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Configuration config = Configuration.getInstance();
 		List<Pipeline> pipelines = config.getPipelines();
 		if (pipelines.size() != 0) {
@@ -151,10 +151,9 @@ public class DBVerifierServlet extends CTPServlet {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	private String getSummary(DatabaseVerifier verifier, int p, int s, String date, String ptid, String clear) {
 		if ((clear != null) && clear.equals("yes")) verifier.clearUnverifiedList();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<center>\n");
 
 		sb.append("<p style=\"width:50%; text-align:left\">");
@@ -170,14 +169,14 @@ public class DBVerifierServlet extends CTPServlet {
 		boolean ptidSearch = true;
 		HashSet<String> studies = null;
 		if (ptid != null) {
-			try { studies = (HashSet<String>)verifier.ptidIndex.find(ptid); }
+			try { studies = toStudySet(verifier.ptidIndex.find(ptid)); }
 			catch (Exception ex) { logger.warn(ex.getMessage()); }
 		}
 		if (studies == null) {
 			ptidSearch = false;
 			if (date == null) date = StringUtil.getDate("");
 			try {
-				studies = (HashSet<String>)verifier.dateIndex.find(date);
+				studies = toStudySet(verifier.dateIndex.find(date));
 				if (studies == null) {
 					//Okay, there is nothing on the specified date.
 					//Look around and see if we can find something.
@@ -189,7 +188,7 @@ public class DBVerifierServlet extends CTPServlet {
 						if (!ok) ok = tb.getNext(tuple);
 						if (ok) {
 							date = (String)tuple.getKey();
-							studies = (HashSet<String>)tuple.getValue();
+							studies = toStudySet(tuple.getValue());
 						}
 					}
 				}
@@ -339,8 +338,19 @@ public class DBVerifierServlet extends CTPServlet {
 		return sb.toString();
 	}
 
+	private HashSet<String> toStudySet(Object value) {
+		if (!(value instanceof HashSet<?>)) return null;
+		HashSet<?> rawSet = (HashSet<?>)value;
+		HashSet<String> studySet = new HashSet<String>(rawSet.size());
+		for (Object item : rawSet) {
+			if (!(item instanceof String)) return null;
+			studySet.add((String)item);
+		}
+		return studySet;
+	}
+
 	private String getInstances(DatabaseVerifier verifier, int p, int s, String date, String ptid, String siuid) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<center>\n");
 
 		try {

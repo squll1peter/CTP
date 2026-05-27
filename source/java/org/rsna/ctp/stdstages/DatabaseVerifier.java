@@ -38,7 +38,6 @@ import org.w3c.dom.Node;
  * objects submitted to a DatabaseExportService have made it all
  * the way to the database.
  */
-@SuppressWarnings("unchecked")
 public class DatabaseVerifier extends AbstractPipelineStage implements Processor {
 
 	static final Logger logger = Logger.getLogger(DatabaseVerifier.class);
@@ -157,7 +156,7 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 						sob = new StudyObject(date, siUID, ptID, ptName);
 
 						//Enter the study into the index of studies by date
-						HashSet<String> studies = (HashSet<String>)dateIndex.find(date);
+						HashSet<String> studies = toStringSet(dateIndex.find(date));
 						if (studies == null) {
 							studies = new HashSet<String>();
 						}
@@ -165,7 +164,7 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 						dateIndex.insert(date, studies, true);
 
 						//Enter the study into the index of studies by ptid
-						studies = (HashSet<String>)ptidIndex.find(ptID);
+						studies = toStringSet(ptidIndex.find(ptID));
 						if (studies == null) {
 							studies = new HashSet<String>();
 						}
@@ -187,12 +186,27 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 			}
 		}
 		catch (Exception skip) {
-			logger.debug("Unable to process "+fileObject.getFile());
+			if (logger.isDebugEnabled()) logger.debug("Unable to process "+fileObject.getFile());
 		}
-
 		lastFileOut = new File(fileObject.getFile().getAbsolutePath());
 		lastTimeOut = System.currentTimeMillis();
 		return fileObject;
+	}
+
+	private HashSet<String> toStringSet(Object value) {
+		if (value == null) return null;
+		if (!(value instanceof HashSet<?>)) {
+			throw new ClassCastException("Expected HashSet but found " + value.getClass().getName());
+		}
+		HashSet<?> rawSet = (HashSet<?>)value;
+		HashSet<String> stringSet = new HashSet<String>(rawSet.size());
+		for (Object item : rawSet) {
+			if (!(item instanceof String)) {
+				throw new ClassCastException("Expected String entry but found " + item.getClass().getName());
+			}
+			stringSet.add((String)item);
+		}
+		return stringSet;
 	}
 
 	//Load the index HTrees
@@ -226,7 +240,7 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 				while (true) {
 					while (!stop && !interrupted()) {
 						int count = 0;
-						StringBuffer sb = new StringBuffer();
+						StringBuilder sb = new StringBuilder();
 						synchronized (unverifiedList) {
 							TupleBrowser tb = unverifiedList.browse(lastKey);
 							while ((unverifiedList.size() > 0) && count < maxUIDs) {
@@ -239,7 +253,7 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 								else { lastKey = "0"; break; }
 							}
 						}
-						logger.debug("About to check the status of "+count+" entries.");
+						if (logger.isDebugEnabled()) logger.debug("About to check the status of "+count+" entries.");
 						if (count > 0) {
 							try {
 								HttpURLConnection conn = HttpUtil.getConnection(url + "?uids=" + sb.toString());
@@ -249,7 +263,7 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 									String result = FileUtil.getText( conn.getInputStream() );
 									Document doc = XmlUtil.getDocument(result);
 									Element root = doc.getDocumentElement();
-									logger.debug("Response:\n"+XmlUtil.toPrettyString(root));
+									if (logger.isDebugEnabled()) logger.debug("Response:\n"+XmlUtil.toPrettyString(root));
 									Node child = root.getFirstChild();
 									while (child != null) {
 										process(child);
@@ -324,7 +338,7 @@ public class DatabaseVerifier extends AbstractPipelineStage implements Processor
 					}
 				}
 				catch (Exception skip) {
-					logger.debug("Exception during erification for\n"+XmlUtil.toPrettyString(node));
+					if (logger.isDebugEnabled()) logger.debug("Exception during erification for\n"+XmlUtil.toPrettyString(node));
 				}
 			}
 		}

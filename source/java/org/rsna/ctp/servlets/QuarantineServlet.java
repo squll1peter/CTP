@@ -58,9 +58,9 @@ public class QuarantineServlet extends CTPServlet {
 	 * @param res the response object
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
-		if (!userIsAuthorized(req)) {
+		if (!userIsAuthorized(req, authState)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -175,14 +175,14 @@ public class QuarantineServlet extends CTPServlet {
 		else if (command.equals("downloadFile")) downloadFile(req, res);
 	}
 
-	private boolean userIsAuthorized(HttpRequest req) {
+	private boolean userIsAuthorized(HttpRequest req, CTPServlet.AuthState authState) {
 		boolean userIsAdmin = req.userHasRole("qadmin") || req.userHasRole("admin");
-		return userIsAdmin || userIsStageAdmin;
+		return userIsAdmin || authState.isStageAdmin;
 	}
 
 	//Get a page listing the sizes of all the quarantines
 	void sizesPage(HttpResponse res) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<html><head><title>Quarantine</title>"+getStyles()+"</head><body>");
 		sb.append("<center><h1>All Quarantines</h1>");
 		sb.append("<table border=\"1\">");
@@ -212,7 +212,7 @@ public class QuarantineServlet extends CTPServlet {
 			res.send();
 			return;
 		}
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<html><head><title>Quarantine</title>"+getStyles()+"</head><body>");
 		sb.append("<center><h1>"+pipeline.getPipelineName()+" Quarantines</h1>");
 		sb.append("<table border=\"1\">");
@@ -226,7 +226,7 @@ public class QuarantineServlet extends CTPServlet {
 	}
 
 	//List the sizes of the quarantines for a single pipeline
-	void getSizes(StringBuffer sb, Pipeline pipeline, int pipelineIndex) {
+	void getSizes(StringBuilder sb, Pipeline pipeline, int pipelineIndex) {
 		List<PipelineStage> stages = pipeline.getStages();
 		boolean first = true;
 		for (int i=0; i<stages.size(); i++) {
@@ -235,7 +235,7 @@ public class QuarantineServlet extends CTPServlet {
 	}
 
 	//List the size of the quarantine for a single PipelineStage.
-	boolean getSize(StringBuffer sb,
+	boolean getSize(StringBuilder sb,
 					Pipeline pipeline,
 					PipelineStage stage,
 					boolean first,
@@ -392,7 +392,7 @@ public class QuarantineServlet extends CTPServlet {
 		DicomObject dicomObject = null;
 		try {
 			dicomObject = new DicomObject(file);
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(getPageStart(pipeline, stage, true, file));
 			sb.append("<body>");
 			sb.append(dicomObject.getElementTable(true));
@@ -414,7 +414,7 @@ public class QuarantineServlet extends CTPServlet {
 
 	//Get the head part of the page.
 	private String getPageStart(Pipeline pipeline, PipelineStage stage, boolean admin, File file) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<html><head><title>Quarantine</title>");
 		sb.append(getStyles());
 		sb.append("<script language=\"JavaScript\" type=\"text/javascript\" src=\"/JSAJAX.js\">;</script>\n");
@@ -436,7 +436,7 @@ public class QuarantineServlet extends CTPServlet {
 
 	//Set up a standard set of styles for these pages.
 	private String getStyles() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/BaseStyles.css\"></link>");
 		sb.append("\n<style>\n");
 		sb.append("td {background-color:white; padding:5;}\n");

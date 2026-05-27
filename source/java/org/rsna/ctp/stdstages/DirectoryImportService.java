@@ -136,7 +136,9 @@ public class DirectoryImportService extends AbstractImportService {
 
 		//List all the files currently in a directory and all its children
 		private void addFiles(File dir) {
+			if ((dir == null) || !dir.exists() || !dir.isDirectory()) return;
 			File[] files = dir.listFiles();
+			if (files == null) return;
 			for (File file : files) {
 				if (!file.isHidden()) {
 					if (file.isFile()

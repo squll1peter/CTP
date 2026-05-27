@@ -222,8 +222,7 @@ public class DicomStorageSCP extends DcmServiceBase {
 			}
         }
         catch (IOException ioe) { 
-			ioe.printStackTrace();
-			logger.debug("doCStore exception", ioe);
+			logger.error("doCStore exception: "+ioe.getMessage(), ioe);
 		}
         finally { in.close(); }
         if (rspDelay > 0L) {

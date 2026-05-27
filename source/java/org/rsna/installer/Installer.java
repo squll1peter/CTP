@@ -13,11 +13,13 @@ import java.io.*;
 import java.net.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.jar.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.*;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.text.*;
@@ -106,21 +108,21 @@ public class Installer extends JFrame implements KeyListener {
 		File jai = getFile(extDir, "jai_imageio", ".jar");
 		imageIOTools = (clib != null) && (jai != null);
 		if (imageIOTools) {
-			Hashtable<String,String> jaiManifest = getManifestAttributes(jai);
+			ConcurrentHashMap<String,String> jaiManifest = getManifestAttributes(jai);
 			imageIOVersion  = jaiManifest.get("Implementation-Version");
 		}
 
 		//Get the CTP.jar parameters
-		Hashtable<String,String> manifest = getJarManifestAttributes("/CTP/libraries/CTP.jar");
+		ConcurrentHashMap<String,String> manifest = getJarManifestAttributes("/CTP/libraries/CTP.jar");
 		programDate = manifest.get("Date");
 		buildJava = manifest.get("Java-Version");
 
 		//Get the util.jar parameters
-		Hashtable<String,String> utilManifest = getJarManifestAttributes("/CTP/libraries/util.jar");
+		ConcurrentHashMap<String,String> utilManifest = getJarManifestAttributes("/CTP/libraries/util.jar");
 		utilJava = utilManifest.get("Java-Version");
 
 		//Get the MIRC.jar parameters (if the plugin is present)
-		Hashtable<String,String> mircManifest = getJarManifestAttributes("/CTP/libraries/MIRC.jar");
+		ConcurrentHashMap<String,String> mircManifest = getJarManifestAttributes("/CTP/libraries/MIRC.jar");
 		if (mircManifest != null) {
 			mircJava = mircManifest.get("Java-Version");
 			mircDate = mircManifest.get("Date");
@@ -646,10 +648,7 @@ public class Installer extends JFrame implements KeyListener {
 			}
 			else {
 				cp.appendln(Color.black, "...not found [OK, this is a non-EdgeServer installation]");
-				ssl.setAttribute("keystore", "keystore.jks");
-				ssl.setAttribute("keystorePassword", "edge1234");
-				ssl.setAttribute("truststore", "truststore.jks");
-				ssl.setAttribute("truststorePassword", "edge1234");
+				applySslDefaults(ssl, generateInstallPassword());
 				cp.appendln(Color.black, "...SSL attributes were updated for a non-EdgeServer installation");
 			}
 		}
@@ -765,7 +764,7 @@ public class Installer extends JFrame implements KeyListener {
 		try {
 			Pattern pattern = Pattern.compile("\\$\\{\\w+\\}");
 			Matcher matcher = pattern.matcher(string);
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			while (matcher.find()) {
 				String group = matcher.group();
 				String key = group.substring(2, group.length()-1).trim();
@@ -897,8 +896,8 @@ public class Installer extends JFrame implements KeyListener {
 		return "CTP";
 	}
 
-	private Hashtable<String,String>  getJarManifestAttributes(String path) {
-		Hashtable<String,String> h = new Hashtable<String,String>();
+	private ConcurrentHashMap<String,String>  getJarManifestAttributes(String path) {
+		ConcurrentHashMap<String,String> h = new ConcurrentHashMap<String,String>();
 		JarInputStream jis = null;
 		try {
 			cp.appendln(Color.black, "Looking for "+path);
@@ -924,8 +923,8 @@ public class Installer extends JFrame implements KeyListener {
 		return h;
 	}
 
-	private static Hashtable<String,String> getManifestAttributes(File jarFile) {
-		Hashtable<String,String> h = new Hashtable<String,String>();
+	private static ConcurrentHashMap<String,String> getManifestAttributes(File jarFile) {
+		ConcurrentHashMap<String,String> h = new ConcurrentHashMap<String,String>();
 		JarFile jar = null;
 		try {
 			jar = new JarFile(jarFile);
@@ -940,8 +939,8 @@ public class Installer extends JFrame implements KeyListener {
 		return h;
 	}
 
-	private static Hashtable<String,String> getManifestAttributes(Manifest manifest) {
-		Hashtable<String,String> h = new Hashtable<String,String>();
+	private static ConcurrentHashMap<String,String> getManifestAttributes(Manifest manifest) {
+		ConcurrentHashMap<String,String> h = new ConcurrentHashMap<String,String>();
 		try {
 			Attributes attrs = manifest.getMainAttributes();
 			Iterator it = attrs.keySet().iterator();
@@ -1002,7 +1001,7 @@ public class Installer extends JFrame implements KeyListener {
 			conn.setRequestMethod("GET");
 			conn.connect();
 			int length = conn.getContentLength();
-			StringBuffer text = new StringBuffer();
+			StringBuilder text = new StringBuilder();
 			InputStream is = conn.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 			int size = 256; char[] buf = new char[size]; int len;
@@ -1023,7 +1022,7 @@ public class Installer extends JFrame implements KeyListener {
             conn.setRequestProperty("servicemanager", "shutdown");
             conn.connect();
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             BufferedReader br = new BufferedReader( new InputStreamReader(conn.getInputStream(), "UTF-8") );
             int n; char[] cbuf = new char[1024];
             while ((n=br.read(cbuf, 0, cbuf.length)) != -1) sb.append(cbuf,0,n);
@@ -1142,9 +1141,41 @@ public class Installer extends JFrame implements KeyListener {
 		}		
 	}
 
+	/**
+	 * Generates a cryptographically random 20-character alphanumeric password.
+	 * Package-visible for testing.
+	 */
+	static String generateInstallPassword() {
+		final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		SecureRandom rng = new SecureRandom();
+		StringBuilder sb = new StringBuilder(20);
+		for (int i = 0; i < 20; i++) {
+			sb.append(CHARS.charAt(rng.nextInt(CHARS.length())));
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * Sets keystore/truststore path and password attributes on an SSL element
+	 * using the supplied password.
+	 * Package-visible for testing.
+	 */
+	static void applySslDefaults(Element ssl, String password) {
+		ssl.setAttribute("keystore", "keystore.jks");
+		ssl.setAttribute("keystorePassword", password);
+		ssl.setAttribute("truststore", "truststore.jks");
+		ssl.setAttribute("truststorePassword", password);
+	}
+
 	private static DocumentBuilder getDocumentBuilder() throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
+		dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+		dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+		dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		dbf.setXIncludeAware(false);
+		dbf.setExpandEntityReferences(false);
 		return dbf.newDocumentBuilder();
 	}
 
@@ -1206,13 +1237,13 @@ public class Installer extends JFrame implements KeyListener {
 	}
 
 	private static String toString(Node node) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		renderNode(sb, node);
 		return sb.toString();
 	}
 
 	//Recursively walk the tree and write the nodes to a StringWriter.
-	private static void renderNode(StringBuffer sb, Node node) {
+	private static void renderNode(StringBuilder sb, Node node) {
 		if (node == null) { sb.append("null"); return; }
 		switch (node.getNodeType()) {
 

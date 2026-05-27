@@ -123,7 +123,7 @@ public class SftpExportService extends AbstractExportService {
 			try {
 				Pattern pattern = Pattern.compile("\\$\\{\\w+\\}");
 				Matcher matcher = pattern.matcher(string);
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				while (matcher.find()) {
 					String group = matcher.group();
 					String dicomKeyword = group.substring(2, group.length()-1).trim();

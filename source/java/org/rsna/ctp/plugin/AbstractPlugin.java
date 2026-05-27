@@ -132,7 +132,7 @@ public abstract class AbstractPlugin implements Plugin {
 	 */
 	public synchronized String getConfigHTML(User user) {
 		boolean admin = (user != null) && user.hasRole("admin");
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 		NamedNodeMap attrs = element.getAttributes();
@@ -162,7 +162,7 @@ public abstract class AbstractPlugin implements Plugin {
 
 	//Get a table for a configuration child element
 	private String getTableFor(Element element) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<table border=\"0\">");
 		NamedNodeMap attrs = element.getAttributes();
 		for (int i=0; i<attrs.getLength(); i++) {
@@ -195,7 +195,7 @@ public abstract class AbstractPlugin implements Plugin {
 	 * @return HTML text displaying the current status of the stage.
 	 */
 	public synchronized String getStatusHTML(String pluginUniqueStatus) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 		sb.append(pluginUniqueStatus);

@@ -47,7 +47,7 @@ public class EnvironmentPanel extends BasePanel {
 	private String displayEnvironment() {
 		String v;
 		String sep = System.getProperty("path.separator",";");
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		Map<String,String> env = System.getenv();
 		String[] n = new String[env.size()];

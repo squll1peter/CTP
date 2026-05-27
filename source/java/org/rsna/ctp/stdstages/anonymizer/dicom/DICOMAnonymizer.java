@@ -26,7 +26,7 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -189,7 +189,7 @@ public class DICOMAnonymizer {
 			FileMetaInfo fmi = dataset.getFileMetaInfo();
             if ((fmi != null) && (fileParam.encapsulated || !forceIVRLE)) {
             	prefEncodingUID = fmi.getTransferSyntaxUID();
-            	logger.debug("FMI TransferSyntaxUID = "+prefEncodingUID);
+            	if (logger.isDebugEnabled()) logger.debug("FMI TransferSyntaxUID = "+prefEncodingUID);
 			}
 			else if (forceIVRLE) {
 				prefEncodingUID = UIDs.ExplicitVRLittleEndian;
@@ -206,7 +206,7 @@ public class DICOMAnonymizer {
 			dataset.writeDataset(out, encoding);
 
 			//Write the pixels if the parser actually stopped before pixeldata
-			logger.debug("Parser stopped at "+Tags.toString(parser.getReadTag()));
+			if (logger.isDebugEnabled()) logger.debug("Parser stopped at "+Tags.toString(parser.getReadTag()));
             if (parser.getReadTag() == Tags.PixelData) {
                 dataset.writeHeader(
                     out,
@@ -247,7 +247,7 @@ public class DICOMAnonymizer {
                 parser.parseHeader();
 			}
 			
-			logger.debug("parser.getReadTag after writing pixels: "+Tags.toString(parser.getReadTag()));
+			if (logger.isDebugEnabled()) logger.debug("parser.getReadTag after writing pixels: "+Tags.toString(parser.getReadTag()));
 			
 			//We have already parsed the header of the first post-pixels element,
 			//so we need to suppress parsing it again.
@@ -258,14 +258,14 @@ public class DICOMAnonymizer {
 			
 			//Set up for building the index of creators for a private group
 			int lastGroup = 0;
-			Hashtable<Integer,String> creatorIndex = new Hashtable<Integer,String>();
+			ConcurrentHashMap<Integer,String> creatorIndex = new ConcurrentHashMap<Integer,String>();
 
 			//Now do any elements after the pixels one at a time.
 			//This is done to allow streaming of large raw data elements
 			//that occur above Tags.PixelData.
 			int tag;
 			long fileLength = inFile.length();
-			logger.debug("fileLength = "+fileLength+" ("+Long.toHexString(fileLength)+")");
+			if (logger.isDebugEnabled()) logger.debug("fileLength = "+fileLength+" ("+Long.toHexString(fileLength)+")");
 			while (logPosition("About to seek post-pixels element:", parser)
 					&& !parser.hasSeenEOF()
 //					&& (parser.getStreamPosition() < fileLength)
@@ -276,7 +276,7 @@ public class DICOMAnonymizer {
 				suppress = false;
 				logPosition("Found post-pixels element: "+Tags.toString(tag), parser);
 				int len = parser.getReadLength();
-				logger.debug("...readLength = "+len+" ("+Integer.toHexString(len)+")");
+				if (logger.isDebugEnabled()) logger.debug("...readLength = "+len+" ("+Integer.toHexString(len)+")");
 				
 				//Build an index of the creators for the current private group
 				int group = (tag >> 16) & 0xffff;
@@ -284,9 +284,9 @@ public class DICOMAnonymizer {
 				boolean isCreator = ((tag & 0xFF00) == 0);
 				if (isPrivate && isCreator) {
 					if (lastGroup != group) {
-						creatorIndex = new Hashtable<Integer,String>();
+						creatorIndex = new ConcurrentHashMap<Integer,String>();
 						lastGroup = group;
-						logger.debug("Found new private group: "+Integer.toHexString(group));
+						if (logger.isDebugEnabled()) logger.debug("Found new private group: "+Integer.toHexString(group));
 					}
 					//Read the creator
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -294,9 +294,9 @@ public class DICOMAnonymizer {
 					for (int i = 0; i < len; ++i) baos.write(inStream.read());
 					String creator = new String(baos.toByteArray()).toString().trim();
 					creatorIndex.put(Integer.valueOf(group), creator);
-					logger.debug("Creator element: "+Tags.toString(tag)+": \""+creator+"\"");
+					if (logger.isDebugEnabled()) logger.debug("Creator element: "+Tags.toString(tag)+": \""+creator+"\"");
 					if (!context.rpg || context.kspe) {
-						logger.debug("Writing element: "+Tags.toString(tag));
+						if (logger.isDebugEnabled()) logger.debug("Writing element: "+Tags.toString(tag));
 						dataset.writeHeader(
 							out,
 							encoding,
@@ -312,24 +312,24 @@ public class DICOMAnonymizer {
 					boolean isSafePrivateElement = false;
 					if (isPrivate) {
 						String creator = creatorIndex.get(Integer.valueOf(group));
-						logger.debug("Found creator \""+creator+"\" for "+Tags.toString(tag));
+						if (logger.isDebugEnabled()) logger.debug("Found creator \""+creator+"\" for "+Tags.toString(tag));
 						String code = ptIndex.getCode(group, creator, tag & 0xff).trim();
-						logger.debug("Got \""+code+"\" code for "+Tags.toString(tag));
+						if (logger.isDebugEnabled()) logger.debug("Got \""+code+"\" code for "+Tags.toString(tag));
 						if (creator != null) isSafePrivateElement = code.equals("K");
-						logger.debug("isSafePrivateElement = "+isSafePrivateElement);
+						if (logger.isDebugEnabled()) logger.debug("isSafePrivateElement = "+isSafePrivateElement);
 					}
 					if ((isPrivate && context.rpg && !(context.kspe && isSafePrivateElement)) || 
 							((script == null) && context.rue) || 
 							((script != null) && script.startsWith("@remove()") ) ) {
 						//skip this element
-						logger.debug("Skipping element: "+Tags.toString(tag));
+						if (logger.isDebugEnabled()) logger.debug("Skipping element: "+Tags.toString(tag));
 						//read past the data
 						InputStream inStream = parser.getInputStream();
 						for (int i = 0; i < len; ++i) inStream.read();
 					}
 					else {
 						//write this element
-						logger.debug("Writing element: "+Tags.toString(tag));
+						if (logger.isDebugEnabled()) logger.debug("Writing element: "+Tags.toString(tag));
 						dataset.writeHeader(
 							out,
 							encoding,
@@ -385,8 +385,8 @@ public class DICOMAnonymizer {
 		if (logger.isDebugEnabled()) {
 			long pos = parser.getStreamPosition();
 			logger.debug(msg);
-			logger.debug("...parser.hasSeenEOF() = "+parser.hasSeenEOF());
-			logger.debug("...streamPosition      = "+pos+" ("+Long.toHexString(pos)+")");
+			if (logger.isDebugEnabled()) logger.debug("...parser.hasSeenEOF() = "+parser.hasSeenEOF());
+			if (logger.isDebugEnabled()) logger.debug("...streamPosition      = "+pos+" ("+Long.toHexString(pos)+")");
 		}
 		return true;
 	}		
@@ -505,7 +505,7 @@ public class DICOMAnonymizer {
 			boolean isSafe = false;
 			
 			if (isPrivate) {
-				logger.debug("Private element: "+Tags.toString(tag)+"; VR="+VRs.toString(el.vr()));
+				if (logger.isDebugEnabled()) logger.debug("Private element: "+Tags.toString(tag)+"; VR="+VRs.toString(el.vr()));
 			}
 				
 			if (isPrivate && !isCreatorBlock) {
@@ -992,9 +992,9 @@ public class DICOMAnonymizer {
 			key = key.replaceAll("\\\\","");
 			if ((fn.args.length > 2) && fn.args[2].equals("UC")) key = key.toUpperCase();
 			if (logger.isDebugEnabled()) {
-				logger.debug("Calling @lookup"+fn.getArgs());
-				logger.debug("   keytype: \""+fn.args[1]+"\"");
-				logger.debug("   key:     \""+key+"\"");
+				if (logger.isDebugEnabled()) logger.debug("Calling @lookup"+fn.getArgs());
+				if (logger.isDebugEnabled()) logger.debug("   keytype: \""+fn.args[1]+"\"");
+				if (logger.isDebugEnabled()) logger.debug("   key:     \""+key+"\"");
 			}
 			String value = AnonymizerFunctions.lookup(fn.context.lkup, fn.args[1], key);
 			return value;
@@ -1042,10 +1042,10 @@ public class DICOMAnonymizer {
 				String keyElementName = fn.args[2];
 				String key = fn.context.contents(keyElementName.trim(), fn.thisTag, fn.context.getRootDataset());
 				
-				logger.debug("dateElementName:  \""+dateElementName+"\"");
-				logger.debug("dateElementValue: \""+dateElementValue+"\"");
-				logger.debug("keyElementName:   \""+keyElementName+"\"");
-				logger.debug("key:              \""+key+"\"");
+				if (logger.isDebugEnabled()) logger.debug("dateElementName:  \""+dateElementName+"\"");
+				if (logger.isDebugEnabled()) logger.debug("dateElementValue: \""+dateElementValue+"\"");
+				if (logger.isDebugEnabled()) logger.debug("keyElementName:   \""+keyElementName+"\"");
+				if (logger.isDebugEnabled()) logger.debug("key:              \""+key+"\"");
 					
 				String basedate = AnonymizerFunctions.lookup(fn.context.lkup, fn.args[1], key).trim();
 				if (dateElementValue.length() > 8) dateElementValue = dateElementValue.substring(0,8);
@@ -1251,7 +1251,7 @@ public class DICOMAnonymizer {
 			inc = -1 * (inc % (10 * 365));
 			if (inc == 0) inc = -1;
 			String[] dates = date.split("\\\\");
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for (int i=0; i<dates.length; i++) {
 				if (i > 0) sb.append("\\");
 				sb.append(AnonymizerFunctions.incrementDate(dates[i], inc));
@@ -1290,16 +1290,16 @@ public class DICOMAnonymizer {
 				String keytype = fn.context.getParam(fn.args[2]);
 				incString = AnonymizerFunctions.lookup(fn.context.lkup, keytype, key);
 				if (logger.isDebugEnabled()) {
-					logger.debug("Calling @incrementdate"+fn.getArgs());
-					logger.debug("   key:     \""+key+"\"");
-					logger.debug("   keytype: \""+fn.args[1]+"\"");
-					logger.debug("   offset:  \""+incString+"\"");
+					if (logger.isDebugEnabled()) logger.debug("Calling @incrementdate"+fn.getArgs());
+					if (logger.isDebugEnabled()) logger.debug("   key:     \""+key+"\"");
+					if (logger.isDebugEnabled()) logger.debug("   keytype: \""+fn.args[1]+"\"");
+					if (logger.isDebugEnabled()) logger.debug("   offset:  \""+incString+"\"");
 				}
 			}
 			else throw new Exception("Unknown calling sequence in incrementdate");
 			long inc = Long.parseLong(incString);
 			String[] dates = date.split("\\\\");
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for (int i=0; i<dates.length; i++) {
 				if (i > 0) sb.append("\\");
 				sb.append(AnonymizerFunctions.incrementDate(dates[i], inc));
@@ -1331,7 +1331,7 @@ public class DICOMAnonymizer {
 			int m = getReplacementValue(fn.context.getParam(fn.args[2]).trim());
 			int d = getReplacementValue(fn.context.getParam(fn.args[3]).trim());
 			String[] dates = date.split("\\\\");
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for (int i=0; i<dates.length; i++) {
 				if (i > 0) sb.append("\\");
 				sb.append(AnonymizerFunctions.modifyDate(dates[i], y, m, d));
@@ -1387,7 +1387,7 @@ public class DICOMAnonymizer {
 	//Execute the decrypt function call. This function is used
 	//to decrypt an encrypted string from an element text value.
 	private static String decrypt(FnCall fn) {
-		logger.debug("decrypt"+fn.getArgs()+" called");
+		if (logger.isDebugEnabled()) logger.debug("decrypt"+fn.getArgs()+" called");
 		if (fn.args.length < 2) return fn.getArgs();
 		try {
 			String value = fn.context.contents(fn.args[0], fn.thisTag);
@@ -1404,7 +1404,7 @@ public class DICOMAnonymizer {
 	//Execute the encrypt function call. This function is used
 	//to generate an encrypted string from an element text value.
 	private static String encrypt(FnCall fn) {
-		logger.debug("encrypt"+fn.getArgs()+" called");
+		if (logger.isDebugEnabled()) logger.debug("encrypt"+fn.getArgs()+" called");
 		if (fn.args.length < 2) return fn.getArgs();
 		try {
 			String value = fn.context.contents(fn.args[0], fn.thisTag);

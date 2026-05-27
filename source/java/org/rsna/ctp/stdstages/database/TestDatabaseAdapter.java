@@ -8,7 +8,7 @@
 package org.rsna.ctp.stdstages.database;
 
 import java.io.File;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -27,7 +27,7 @@ public class TestDatabaseAdapter extends DatabaseAdapter {
 	static final Logger logger = Logger.getLogger(TestDatabaseAdapter.class);
 
 	static int objectCount = 0;
-	static Hashtable<String,String> digests = new Hashtable<String,String>();
+	static ConcurrentHashMap<String,String> digests = new ConcurrentHashMap<String,String>();
 	int lastPresentCount = 1;
 
 	/**
@@ -71,7 +71,7 @@ public class TestDatabaseAdapter extends DatabaseAdapter {
 	 * database does not support queries for object presence or absence, return null.
 	 */
 	public Map<String, UIDResult> uidQuery(Set<String> uidSet) {
-		Hashtable<String, UIDResult> map = new Hashtable<String, UIDResult>();
+		ConcurrentHashMap<String, UIDResult> map = new ConcurrentHashMap<String, UIDResult>();
 		int count = 0;
 		int present = 0;
 		for (String uid : uidSet) {

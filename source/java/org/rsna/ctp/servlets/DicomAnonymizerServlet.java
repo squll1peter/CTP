@@ -59,11 +59,11 @@ public class DicomAnonymizerServlet extends CTPServlet {
 	 * @param res The HttpServletResponse provided by the servlet container.
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 		res.setContentEncoding(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -128,7 +128,7 @@ public class DicomAnonymizerServlet extends CTPServlet {
 	 * @param res The HttpResponse provided by the servlet container.
 	 */
 	public void doPost(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 		
 		//Do NOT call setContentEncoding.
 		//If you do, the AJAX clients won't get any content.
@@ -136,7 +136,7 @@ public class DicomAnonymizerServlet extends CTPServlet {
 		//res.setContentEncoding(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized || !req.isReferredFrom(context)) {
+		if (!authState.isAuthorized || !req.isReferredFrom(context)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -196,7 +196,7 @@ public class DicomAnonymizerServlet extends CTPServlet {
 	private String getProfilesXML() {
 		dicomProfiles.mkdirs();
 		savedProfiles.mkdirs();
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<profiles>\n");
 		addFiles(sb, dicomProfiles);
 		addFiles(sb, savedProfiles);
@@ -204,7 +204,7 @@ public class DicomAnonymizerServlet extends CTPServlet {
 		return sb.toString();
 	}
 
-	private void addFiles(StringBuffer sb, File dir) {
+	private void addFiles(StringBuilder sb, File dir) {
 		File[] files = dir.listFiles();
 		String dirName = dir.getName().toLowerCase();
 		for (int i=0; i<files.length; i++) {
@@ -251,7 +251,7 @@ public class DicomAnonymizerServlet extends CTPServlet {
 	}
 
 	private String makeList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Configuration config = Configuration.getInstance();
 		List<Pipeline> pipelines = config.getPipelines();
 		int count = 0;

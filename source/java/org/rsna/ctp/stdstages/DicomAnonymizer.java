@@ -8,7 +8,6 @@
 package org.rsna.ctp.stdstages;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.LinkedList;
 import java.util.Properties;
 import org.apache.log4j.Logger;
@@ -38,6 +37,10 @@ public class DicomAnonymizer extends AbstractPipelineStage implements Processor,
 	public File lookupTableFile = null;
 	public IntegerTable intTable = null;
 	File dicomScriptFile = null; //the DicomFilter script that determines whether to anonymize the object
+	private volatile Properties cachedScriptProperties = null;
+	private volatile Properties cachedLookupProperties = null;
+	private volatile long cachedScriptLastModified = -1;
+	private volatile long cachedLookupLastModified = -1;
 
 	/**
 	 * Construct the DicomAnonymizer PipelineStage.
@@ -148,9 +151,9 @@ public class DicomAnonymizer extends AbstractPipelineStage implements Processor,
 
 				//Okay, anonymize the object
 				File file = fileObject.getFile();
-				DAScript dascript = DAScript.getInstance(scriptFile);
-				Properties script = dascript.toProperties();
-				Properties lookup = LookupTable.getProperties(lookupTableFile);
+				refreshCachedProperties();
+				Properties script = cachedScriptProperties;
+				Properties lookup = cachedLookupProperties;
 				AnonymizerStatus status =
 							DICOMAnonymizer.anonymize(file, file, script, lookup, intTable, false, false);
 				if (status.isOK()) {
@@ -167,6 +170,30 @@ public class DicomAnonymizer extends AbstractPipelineStage implements Processor,
 		lastFileOut = new File(fileObject.getFile().getAbsolutePath());
 		lastTimeOut = System.currentTimeMillis();
 		return fileObject;
+	}
+
+	// Refresh cached script/lookup properties only when source files change.
+	private synchronized void refreshCachedProperties() {
+		if (scriptFile != null) {
+			long scriptLastModified = scriptFile.lastModified();
+			if ((cachedScriptProperties == null) || (scriptLastModified != cachedScriptLastModified)) {
+				DAScript dascript = DAScript.getInstance(scriptFile);
+				cachedScriptProperties = dascript.toProperties();
+				cachedScriptLastModified = scriptLastModified;
+			}
+		}
+
+		if (lookupTableFile != null) {
+			long lookupLastModified = lookupTableFile.lastModified();
+			if ((cachedLookupProperties == null) || (lookupLastModified != cachedLookupLastModified)) {
+				cachedLookupProperties = LookupTable.getProperties(lookupTableFile);
+				cachedLookupLastModified = lookupLastModified;
+			}
+		}
+		else {
+			cachedLookupProperties = null;
+			cachedLookupLastModified = -1;
+		}
 	}
 
 	/**

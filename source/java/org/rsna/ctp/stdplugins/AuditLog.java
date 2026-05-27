@@ -200,9 +200,8 @@ public class AuditLog extends AbstractPlugin {
 		catch (Exception ex) { logger.warn("getNextID:",ex); throw ex; }
 	}
 
-	@SuppressWarnings("unchecked")
 	private void appendID(HTree index, String key, Integer id) throws Exception {
-		LinkedList<Integer> list = (LinkedList<Integer>)index.get(key);
+		LinkedList<Integer> list = toIntegerList(index.get(key));
 		if (list == null) list = new LinkedList<Integer>();
 		list.add(id);
 		index.put(key, list);
@@ -286,13 +285,28 @@ public class AuditLog extends AbstractPlugin {
 		return ids;
 	}
 
-	@SuppressWarnings("unchecked")
 	private synchronized LinkedList<Integer> getIDs(HTree index, String key) {
 		LinkedList<Integer> list = null;
-		try { list = (LinkedList<Integer>)index.get(key); }
+		try { list = toIntegerList(index.get(key)); }
 		catch (Exception ex) { }
 		if (list == null) list = new LinkedList<Integer>();
 		return list;
+	}
+
+	private LinkedList<Integer> toIntegerList(Object value) {
+		if (value == null) return null;
+		if (!(value instanceof LinkedList<?>)) {
+			throw new ClassCastException("Expected LinkedList but found " + value.getClass().getName());
+		}
+		LinkedList<?> rawList = (LinkedList<?>)value;
+		LinkedList<Integer> intList = new LinkedList<Integer>();
+		for (Object item : rawList) {
+			if (!(item instanceof Integer)) {
+				throw new ClassCastException("Expected Integer entry but found " + item.getClass().getName());
+			}
+			intList.add((Integer)item);
+		}
+		return intList;
 	}
 
 	/**

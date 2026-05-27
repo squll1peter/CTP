@@ -271,7 +271,7 @@ public class ArchiveImportService extends AbstractPipelineStage implements Impor
 	 * @return HTML text displaying the active status of the stage.
 	 */
 	public synchronized String getStatusHTML() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 

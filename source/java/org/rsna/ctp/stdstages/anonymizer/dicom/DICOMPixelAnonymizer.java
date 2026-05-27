@@ -18,7 +18,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -87,10 +86,10 @@ public class DICOMPixelAnonymizer {
 
 		long fileLength = inFile.length();
 		logger.debug("Entering DICOMPixelAnonymizer.anonymize");
-		logger.debug("File length = "+fileLength);
+		if (logger.isDebugEnabled()) logger.debug("File length = "+fileLength);
 
 		BufferedInputStream in = null;
-		FileOutputStream out = null;
+			OutputStream out = null;
 		File tempFile = null;
 		byte[] buffer = new byte[4096];
 		try {
@@ -124,7 +123,7 @@ public class DICOMPixelAnonymizer {
 				DcmEncodeParam encoding = DcmEncodeParam.valueOf(transferSyntaxUID);
 				if (encoding.encapsulated && !transferSyntaxUID.equals(JPEGBaseline)) {
 					close(in);
-					logger.debug("Unsupported TransferSyntaxUID: "+transferSyntaxUID);
+					if (logger.isDebugEnabled()) logger.debug("Unsupported TransferSyntaxUID: "+transferSyntaxUID);
 					return AnonymizerStatus.SKIP(inFile, "Unsupported TransferSyntaxUID: "+transferSyntaxUID);
 				}
 			}
@@ -144,7 +143,7 @@ public class DICOMPixelAnonymizer {
 			}
 			if ((bitsAllocated % 8) != 0) {
 				close(in);
-				logger.debug("Unsupported BitsAllocated: "+bitsAllocated);
+				if (logger.isDebugEnabled()) logger.debug("Unsupported BitsAllocated: "+bitsAllocated);
  				return AnonymizerStatus.SKIP(inFile, "Unsupported BitsAllocated: "+bitsAllocated);
 			}
 
@@ -157,7 +156,7 @@ public class DICOMPixelAnonymizer {
 			//Save the dataset to a temporary file, and rename at the end.
 			File tempDir = outFile.getParentFile();
 			tempFile = File.createTempFile("DCMtemp-", ".anon", tempDir);
-            out = new FileOutputStream(tempFile);
+            out = new java.io.BufferedOutputStream(new FileOutputStream(tempFile));
 
             //Create and write the metainfo for the encoding we are using
 			logger.debug("About to create and write the metadata");
@@ -176,7 +175,7 @@ public class DICOMPixelAnonymizer {
 			
 			//Process the pixels
 			if (parser.getReadTag() == Tags.PixelData) {
-				logger.debug("Processing the Pixels element: " + Integer.toHexString(parser.getReadTag()));
+				if (logger.isDebugEnabled()) logger.debug("Processing the Pixels element: " + Integer.toHexString(parser.getReadTag()));
 				logger.debug("Stream position before the Pixels element: "
 								+parser.getStreamPosition()+" ["+Long.toHexString(parser.getStreamPosition())+"]");
 				dataset.writeHeader(
@@ -223,7 +222,7 @@ public class DICOMPixelAnonymizer {
 								&& ((tag=parser.getReadTag()) != -1)
 									&& (tag != 0xFFFAFFFA)
 									&& (tag != 0xFFFCFFFC)) {
-						logger.debug("About to write post-pixels element "+Integer.toHexString(tag));
+						if (logger.isDebugEnabled()) logger.debug("About to write post-pixels element "+Integer.toHexString(tag));
 						dataset.writeHeader(
 							out,
 							encoding,
@@ -301,11 +300,11 @@ public class DICOMPixelAnonymizer {
 
 		int rows = getInt(dataset, Tags.Rows, 0);
 		int columns = getInt(dataset, Tags.Columns, 0);
-		Vector<Shape> shapes = regions.getRegionsVector(rows, columns);
+			Vector<Shape> shapes = regions.getRegionsVector(rows, columns);
 		if (logger.isDebugEnabled()) {
 			for (Shape shape : shapes) {
 				Rectangle rect = shape.getBounds();
-				logger.debug("Shape: "+rect.toString());
+				if (logger.isDebugEnabled()) logger.debug("Shape: "+rect.toString());
 			}
 		}
 
@@ -336,7 +335,7 @@ public class DICOMPixelAnonymizer {
 				int size = outFrame.size();
 				dataset.writeHeader(out, encoding, Tags.Item, VRs.NONE, size);
 				out.write(outFrame.toByteArray());
-				logger.debug("Processed frame " + frameNumber++ + "; item length = " + size);
+				if (logger.isDebugEnabled()) logger.debug("Processed frame " + frameNumber++ + "; item length = " + size);
 
 				//Reset for the next frame
 				frame.reset();
@@ -387,7 +386,7 @@ public class DICOMPixelAnonymizer {
 
 		int len = parser.getReadLength();
 		logger.debug("Process Unencapsulated Pixels:");
-		logger.debug("Read length = "+len);
+		if (logger.isDebugEnabled()) logger.debug("Read length = "+len);
 
 		String pi = photometricInterpretation.toUpperCase();
 		boolean isYBR_FULL = pi.equals("YBR_FULL");
@@ -463,11 +462,11 @@ public class DICOMPixelAnonymizer {
 		}
 		//Add a byte to the end if we have written an odd number of bytes
 		long nbytes = numberOfFrames * rows * bytesPerRow;
-		logger.debug("numberOfFrames    = "+numberOfFrames);
-		logger.debug("rows              = "+rows);
-		logger.debug("columns           = "+columns);
-		logger.debug("bytesPerPixel     = "+bytesPerPixel);
-		logger.debug("Total image bytes = "+nbytes);
+		if (logger.isDebugEnabled()) logger.debug("numberOfFrames    = "+numberOfFrames);
+		if (logger.isDebugEnabled()) logger.debug("rows              = "+rows);
+		if (logger.isDebugEnabled()) logger.debug("columns           = "+columns);
+		if (logger.isDebugEnabled()) logger.debug("bytesPerPixel     = "+bytesPerPixel);
+		if (logger.isDebugEnabled()) logger.debug("Total image bytes = "+nbytes);
 		if ((nbytes & 1) != 0) out.write(0);
 
 		parser.setStreamPosition(parser.getStreamPosition() + len);

@@ -56,7 +56,7 @@ public class ConfigurationServlet extends Servlet {
 		String ipAddress = config.getIPAddress();
 		int serverPort = config.getServerPort();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<html>");
 		sb.append("<head>");
 		sb.append("<title>Configuration</title>");

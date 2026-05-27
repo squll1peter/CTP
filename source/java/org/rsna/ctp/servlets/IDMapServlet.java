@@ -52,10 +52,10 @@ public class IDMapServlet extends CTPServlet {
 	 * @param res the response object
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -86,10 +86,10 @@ public class IDMapServlet extends CTPServlet {
 	 * @param res The HttpResponse provided by the servlet container.
 	 */
 	public void doPost(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized || !req.isReferredFrom(context)) {
+		if (!authState.isAuthorized || !req.isReferredFrom(context)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -173,7 +173,7 @@ public class IDMapServlet extends CTPServlet {
 	}
 
 	private String makeList(String home) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Configuration config = Configuration.getInstance();
 		List<Pipeline> pipelines = config.getPipelines();
 		if (pipelines.size() != 0) {
@@ -207,7 +207,7 @@ public class IDMapServlet extends CTPServlet {
 	}
 
 	private String makeForm(IDMap idMap, int p, int s, String home) {
-		StringBuffer form = new StringBuffer();
+		StringBuilder form = new StringBuilder();
 		form.append("<form method=\"POST\" accept-charset=\"UTF-8\" action=\"/"+context+"\">\n");
 		form.append(hidden("p",Integer.toString(p)));
 		form.append(hidden("s",Integer.toString(s)));
@@ -295,7 +295,7 @@ public class IDMapServlet extends CTPServlet {
 	}
 
 	private String getXML(Pair[] data, String keyTitle, String valueTitle) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<Map>\n");
 		sb.append("  <KeyTitle>"+keyTitle+"</KeyTitle>\n");
 		sb.append("  <ValueTitle>"+valueTitle+"</ValueTitle>\n");
@@ -310,7 +310,7 @@ public class IDMapServlet extends CTPServlet {
 	}
 
 	private String getCSV(Pair[] data, String keyTitle, String valueTitle) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(keyTitle + "," + valueTitle + "\n");
 		for (int i=0; i<data.length; i++) {
 			sb.append(wrap(data[i].key) + "," + wrap(data[i].value) + "\n");
@@ -323,7 +323,7 @@ public class IDMapServlet extends CTPServlet {
 	}
 	
 	private String getMapTable(Pair[] data, String keyTitle, String valueTitle) {
-		StringBuffer sb = new StringBuffer("<table border=\"1\">");
+		StringBuilder sb = new StringBuilder("<table border=\"1\">");
 		sb.append("<tr>");
 		sb.append("<th>"+keyTitle+"</th>");
 		sb.append("<th>"+valueTitle+"</th>");

@@ -10,7 +10,7 @@ package org.rsna.ctp.stdstages.anonymizer.xml;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import java.util.Properties;
 import org.apache.log4j.Logger;
@@ -75,7 +75,7 @@ public class XMLAnonymizer {
 			File cmdFile,
 			Properties lookup) {
 		try {
-			Hashtable<String,String> store = new Hashtable<String,String>();
+			ConcurrentHashMap<String,String> store = new ConcurrentHashMap<String,String>();
 			String cmds = FileUtil.getText(cmdFile);
 			XmlCommandHandler ch = new XmlCommandHandler(cmds);
 			XmlCommand cmd = null;

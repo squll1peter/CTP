@@ -14,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
@@ -68,7 +67,7 @@ public class DICOMPhotometricInterpretationConverter {
 		logger.debug("File length       = "+fileLength);
 
 		BufferedInputStream in = null;
-		FileOutputStream out = null;
+			OutputStream out = null;
 		File tempFile = null;
 		byte[] buffer = new byte[4096];
 		try {
@@ -145,7 +144,7 @@ public class DICOMPhotometricInterpretationConverter {
 			//Save the dataset to a temporary file, and rename at the end.
 			File tempDir = outFile.getParentFile();
 			tempFile = File.createTempFile("DCMtemp-", ".anon", tempDir);
-            out = new FileOutputStream(tempFile);
+            out = new java.io.BufferedOutputStream(new FileOutputStream(tempFile));
 
             //Create and write the metainfo for the encoding we are using
 			fmi = oFact.newFileMetaInfo(dataset, prefEncodingUID);

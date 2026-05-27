@@ -261,9 +261,9 @@ public class DicomObject extends FileObject {
 		if (in == null) throw new Exception("Input stream is not open.");
 		long streamPosition = parser.getStreamPosition();
 		byte[] buffer = new byte[4096];
-		FileOutputStream out = null;
-		try {
-            out = new FileOutputStream(file);
+OutputStream out = null;
+            try {
+            out = new java.io.BufferedOutputStream(new FileOutputStream(file));
 
 			//Set the encoding
 			DcmDecodeParam fileParam = parser.getDcmDecodeParam();
@@ -345,7 +345,7 @@ public class DicomObject extends FileObject {
 					//&& (parser.getStreamPosition() < fileLength)
 						&& ((tag=parser.getReadTag()) != -1)
 							&& (tag != 0xFFFCFFFC)) {
-				logger.debug("About to write "+String.format("%08x element", tag));
+				if (logger.isDebugEnabled()) logger.debug("About to write "+String.format("%08x element", tag));
 				dataset.writeHeader(
 					out,
 					encoding,
@@ -353,7 +353,7 @@ public class DicomObject extends FileObject {
 					parser.getReadVR(),
 					parser.getReadLength());
 				writeValueTo(parser, buffer, out, swap);
-				logger.debug("Wrote "+String.format("%08x element", tag));
+				if (logger.isDebugEnabled()) logger.debug("Wrote "+String.format("%08x element", tag));
 				parser.parseHeader();
 				logger.debug("Parsed header for next element.");
 				if (parser.hasSeenEOF()) logger.debug("...got EOF");
@@ -1015,7 +1015,7 @@ public class DicomObject extends FileObject {
 					FileMetaInfo fmi = ds.getFileMetaInfo();
 					String tsUID = fmi.getTransferSyntaxUID();
 					boolean isLE = !tsUID.equals(UIDs.ExplicitVRBigEndian);
-					StringBuffer sb = new StringBuffer();
+					StringBuilder sb = new StringBuilder();
 					
 					if (privateInt) {
 						//Handle ints
@@ -1062,7 +1062,7 @@ public class DicomObject extends FileObject {
 			String[] s = de.getStrings(cs);
 			if (s.length == 1) return s[0];
 			if (s.length == 0) return "";
-			StringBuffer sb = new StringBuffer( s[0] );
+			StringBuilder sb = new StringBuilder( s[0] );
 			for (int i=1; i<s.length; i++) {
 				sb.append( "\\" + s[i] );
 			}
@@ -1317,7 +1317,7 @@ public class DicomObject extends FileObject {
 						String[] s = e.getStrings(charset);
 						if (s.length == 1) return s[0];
 						if (s.length == 0) return "";
-						StringBuffer sb = new StringBuffer( s[0] );
+						StringBuilder sb = new StringBuilder( s[0] );
 						for (int i=1; i<s.length; i++) {
 							sb.append( "\\" + s[i] );
 						}
@@ -1416,7 +1416,7 @@ public class DicomObject extends FileObject {
 			String[] s = de.getStrings(charset);
 			if (s.length == 1) return s[0];
 			if (s.length == 0) return "";
-			StringBuffer sb = new StringBuffer( s[0] );
+			StringBuilder sb = new StringBuilder( s[0] );
 			for (int i=1; i<s.length; i++) {
 				sb.append( "|" + s[i] );
 			}
@@ -2193,7 +2193,7 @@ public class DicomObject extends FileObject {
 	 * @return the HTML page.
 	 */
 	public String getElementTablePage(boolean decipherLinks) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<html>\n");
 		sb.append("<head>\n");
 		sb.append("<title>"+file.getName()+"</title>\n");
@@ -2235,7 +2235,7 @@ public class DicomObject extends FileObject {
 	 * @return the HTML text listing all the elements in the DICOM object.
 	 */
 	public String getElementTable(boolean decipherLinks) {
-		StringBuffer table = new StringBuffer();
+		StringBuilder table = new StringBuilder();
 		table.append("<h3>"+file.getName());
 		table.append("<br>"+getTransferSyntaxName());
 		table.append("<br>"+getSOPClassName());
@@ -2257,7 +2257,7 @@ public class DicomObject extends FileObject {
 
 	private void walkDataset(
 						DcmObject dataset,
-						StringBuffer table,
+						StringBuilder table,
 						String prefix,
 						boolean decipherLinks) {
 		int maxLength = 70;
@@ -2350,7 +2350,7 @@ public class DicomObject extends FileObject {
 	//cases where the element is multivalued and where the element value
 	//is too long to be reasonably displayed.
 	private String getElementValueString(DcmElement el, DcmObject dataset, int maxLength) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int tag = el.tag();
 		if ((tag & 0xffff0000) >= 0x60000000) return "...";
 		
@@ -2508,7 +2508,7 @@ public class DicomObject extends FileObject {
 	 * @return the computed boolean value of the script.
 	 */
 	public boolean matches(String script) {
-		logger.debug("Match script:\n"+script);
+		if (logger.isDebugEnabled()) logger.debug("Match script:\n"+script);
 
 		Tokenizer tokenizer = new Tokenizer(script);
 		Stack<Operator> operators = new Stack<Operator>();
@@ -2523,7 +2523,7 @@ public class DicomObject extends FileObject {
 			result = unstack(tokens);
 		}
 		catch (Exception ex) { logger.error("", ex); }
-		logger.debug("Match result = "+result);
+		if (logger.isDebugEnabled()) logger.debug("Match result = "+result);
 		return result;
 	}
 

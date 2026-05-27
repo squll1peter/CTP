@@ -9,7 +9,7 @@ package org.rsna.ctp.objects;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.log4j.Logger;
 import org.rsna.util.Cache;
 import org.rsna.util.FileUtil;
@@ -28,11 +28,11 @@ public class PrivateTagIndex {
 	static final Logger logger = Logger.getLogger(PrivateTagIndex.class);
 	static final String xmlResource = "PrivateTagDictionary.xml";
 	static PrivateTagIndex privateTagIndex = null;
-	Hashtable<String,PrivateTag> index = null;
+	ConcurrentHashMap<String,PrivateTag> index = null;
 
 	//The protected constructor of the singleton.
 	protected PrivateTagIndex() {
-		index = new Hashtable<String,PrivateTag>();
+		index = new ConcurrentHashMap<String,PrivateTag>();
 		try {
 			InputStream is = FileUtil.getStream( xmlResource );
 			Document doc = XmlUtil.getDocument( is );

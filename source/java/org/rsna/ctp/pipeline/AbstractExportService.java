@@ -105,6 +105,16 @@ public abstract class AbstractExportService extends AbstractQueuedExportService 
 	}
 
 	/**
+	 * Stop this export stage and interrupt the exporter thread so shutdown
+	 * is not delayed by sleep intervals or a long queue backlog.
+	 */
+	public synchronized void shutdown() {
+		enableExport = false;
+		if (exporter != null) exporter.interrupt();
+		super.shutdown();
+	}
+
+	/**
 	 * Abstract method to export a file.
 	 * @param file the file to export.
 	 * @return the status of the attempt to export the file.
@@ -199,12 +209,16 @@ public abstract class AbstractExportService extends AbstractQueuedExportService 
 					//queue is small.
 					if (!stop && (getQueueSize() < 20)) recount();
 				}
+				catch (InterruptedException ex) {
+					Thread.currentThread().interrupt();
+					break;
+				}
 				catch (Exception e) {
-					logger.warn(name+" Exporter Thread: Exception received",e);
+					if (!stop) logger.warn(name+" Exporter Thread: Exception received",e);
 					stop = true;
 				}
 			}
-			logger.info(name+" Thread: Interrupt received; exporter thread stopped");
+			logger.info(name+": Exporter thread stopped");
 		}
 	}
 	
@@ -269,7 +283,7 @@ public abstract class AbstractExportService extends AbstractQueuedExportService 
 	 * @return HTML text displaying the active status of the stage.
 	 */
 	public synchronized String getStatusHTML(String childUniqueStatus) {
-		StringBuffer sb = new StringBuffer(childUniqueStatus);
+		StringBuilder sb = new StringBuilder(childUniqueStatus);
 		sb.append(
 				  "<tr><td width=\"20%\">Export enabled:</td>"
 				+ "<td>"

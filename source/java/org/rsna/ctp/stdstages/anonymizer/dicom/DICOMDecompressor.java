@@ -18,7 +18,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.security.*;
@@ -71,7 +70,7 @@ public class DICOMDecompressor {
     public static AnonymizerStatus decompress(File inFile, File outFile) {
 
 		long fileLength = inFile.length();
-		logger.debug("File length      = "+fileLength);
+		if (logger.isDebugEnabled()) logger.debug("File length      = "+fileLength);
 
 		BufferedInputStream in = null;
 		BufferedOutputStream out = null;
@@ -173,16 +172,16 @@ public class DICOMDecompressor {
                 int nPixelBytes = numberOfFrames * rows * columns * samplesPerPixel * bytesPerSample;
                 int pixelBytesLength = nPixelBytes + (nPixelBytes & 1);
                 int pixelsVR = ((bytesPerSample == 1) && (samplesPerPixel == 1)) ? VRs.OB : VRs.OW;
-                logger.debug("planarConfig     = "+planarConfig);
-                logger.debug("photometricInt   = "+photometricInterpretation);
-                logger.debug("numberOfFrames   = "+numberOfFrames);
-                logger.debug("rows             = "+rows);
-                logger.debug("columns          = "+columns);
-                logger.debug("samplesPerPixel  = "+samplesPerPixel);
-                logger.debug("bytesPerSample   = "+bytesPerSample);
-                logger.debug("pixelsVR         = "+VRs.toString(pixelsVR));
-                logger.debug("nPixelBytes      = "+nPixelBytes);
-                logger.debug("pixelBytesLength = "+pixelBytesLength);
+                if (logger.isDebugEnabled()) logger.debug("planarConfig     = "+planarConfig);
+                if (logger.isDebugEnabled()) logger.debug("photometricInt   = "+photometricInterpretation);
+                if (logger.isDebugEnabled()) logger.debug("numberOfFrames   = "+numberOfFrames);
+                if (logger.isDebugEnabled()) logger.debug("rows             = "+rows);
+                if (logger.isDebugEnabled()) logger.debug("columns          = "+columns);
+                if (logger.isDebugEnabled()) logger.debug("samplesPerPixel  = "+samplesPerPixel);
+                if (logger.isDebugEnabled()) logger.debug("bytesPerSample   = "+bytesPerSample);
+                if (logger.isDebugEnabled()) logger.debug("pixelsVR         = "+VRs.toString(pixelsVR));
+                if (logger.isDebugEnabled()) logger.debug("nPixelBytes      = "+nPixelBytes);
+                if (logger.isDebugEnabled()) logger.debug("pixelBytesLength = "+pixelBytesLength);
 
                 //Write the element header
                 dataset.writeHeader(
@@ -197,20 +196,20 @@ public class DICOMDecompressor {
 				reader = (ImageReader)ImageIO.getImageReadersByFormatName("DICOM").next();
 				reader.setInput(fiis);
 				for (int i=0; i<numberOfFrames; i++) {
-					logger.debug("Decompressing frame "+i);
+					if (logger.isDebugEnabled()) logger.debug("Decompressing frame "+i);
 					BufferedImage bi = reader.read(i);
 					if (!isMonochrome /*&& !isRGB*/) bi = convertToRGB(bi);
 					WritableRaster wr = bi.getRaster();
 					DataBuffer b = wr.getDataBuffer();
 					int numBanks = b.getNumBanks();
-					logger.debug("Number of banks = "+numBanks);
+					if (logger.isDebugEnabled()) logger.debug("Number of banks = "+numBanks);
 					for (int bank=0; bank<numBanks; bank++) {
-						logger.debug("  Reading bank "+bank);
+						if (logger.isDebugEnabled()) logger.debug("  Reading bank "+bank);
 						if (b.getDataType() == DataBuffer.TYPE_USHORT) {
 							logger.debug("  Datatype: DataBuffer.TYPE_USHORT");
 							DataBufferUShort bus = (DataBufferUShort)b;
 							short[] data = bus.getData(bank);
-							logger.debug("    Buffer length = "+data.length);
+							if (logger.isDebugEnabled()) logger.debug("    Buffer length = "+data.length);
 							for (int k=0; k<data.length; k++) {
 								int p = data[k] & 0xffff;
 								out.write(p & 0xff);
@@ -221,7 +220,7 @@ public class DICOMDecompressor {
 							logger.debug("    Datatype: DataBuffer.TYPE_SHORT");
 							DataBufferShort bs = (DataBufferShort)b;
 							short[] data = bs.getData(bank);
-							logger.debug("    Buffer length = "+data.length);
+							if (logger.isDebugEnabled()) logger.debug("    Buffer length = "+data.length);
 							for (int k=0; k<data.length; k++) {
 								int p = data[k] & 0xffff;
 								out.write(p & 0xff);
@@ -232,14 +231,14 @@ public class DICOMDecompressor {
 							logger.debug("    Datatype: DataBuffer.TYPE_BYTE");
 							DataBufferByte bb = (DataBufferByte)b;
 							byte[] data = bb.getData(bank);
-							logger.debug("    Buffer length = "+data.length);
+							if (logger.isDebugEnabled()) logger.debug("    Buffer length = "+data.length);
 							out.write(data);
 						}
 						else if (b.getDataType() == DataBuffer.TYPE_INT) {
 							logger.debug("    Datatype: DataBuffer.TYPE_INT");
 							DataBufferInt bb = (DataBufferInt)b;
 							int[] data = bb.getData(bank);
-							logger.debug("    Buffer length = "+data.length);
+							if (logger.isDebugEnabled()) logger.debug("    Buffer length = "+data.length);
 							for (int k=0; k<data.length; k++) {
 								int red = (data[k] & 0xff0000) >> 16;
 								int green = (data[k] & 0xff00) >> 8;
@@ -254,7 +253,7 @@ public class DICOMDecompressor {
 							throw new Exception("Unsupported DataBuffer type: "+b.getDataType());
 						}
 					}
-					logger.debug("  Done decompressing frame "+i);
+					if (logger.isDebugEnabled()) logger.debug("  Done decompressing frame "+i);
 				}
 				//Pad the pixels if necessary
 				if ((nPixelBytes & 1) != 0) {

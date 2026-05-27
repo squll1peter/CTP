@@ -11,7 +11,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.net.*;
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -38,6 +38,7 @@ import org.rsna.util.StringUtil;
 import org.rsna.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
@@ -64,12 +65,13 @@ public class Configuration {
 	int maxThreads = 20;
 	String usersClassName = "org.rsna.server.UsersXmlFileImpl";
 	boolean requireAuthentication = false;
+	boolean enableStageProfiling = false;
 	String ipAddress = getIPAddress();
 	List<Pipeline> pipelines = null;
 	List<Plugin> pluginsList = null;
-	Hashtable<String,String> manifest = null;
-	Hashtable<String,PipelineStage> stages = null;
-	Hashtable<String,Plugin> plugins = null;
+	java.util.Map<String,String> manifest = null;
+	ConcurrentHashMap<String,PipelineStage> stages = null;
+	ConcurrentHashMap<String,Plugin> plugins = null;
 	Element serverElement = null;
 	String ctpBuild = "";
 	String ctpJava = "";
@@ -95,7 +97,6 @@ public class Configuration {
 	//The protected constructor. This can only be called by
 	//Configuration.getInstance(), thus ensuring that it is
 	//only called once.
-	@SuppressWarnings("unchecked")
 	protected Configuration() {
 		try {
 			//Log the environment
@@ -141,10 +142,10 @@ public class Configuration {
 			logger.info("IP Address:          "+IPUtil.getIPAddress() + "\n");
 
 			//Instantiate the stages table
-			stages = new Hashtable<String,PipelineStage>();
+			stages = new ConcurrentHashMap<String,PipelineStage>();
 
 			//Instantiate the plugins table
-			plugins = new Hashtable<String,Plugin>();
+			plugins = new ConcurrentHashMap<String,Plugin>();
 
 			//Get the configuration file.
 			configFile = FileUtil.getFile(configFN, exconfigFN);
@@ -155,7 +156,7 @@ public class Configuration {
 
 			//Log the configuration.
 			logger.info("Classpath:\n"+ClasspathUtil.listClasspath());
-			logger.info("Configuration:\n" + XmlUtil.toPrettyString(root));
+				logger.info("Configuration:\n" + sanitizeForLogging(root));
 			logger.info("Available ImageIO Codecs:\n" + ImageIOTools.listAvailableCodecs());
 
 			//Get the children and instantiate them.
@@ -185,6 +186,7 @@ public class Configuration {
 						String temp = serverElement.getAttribute("usersClassName").trim();
 						if (!temp.equals("")) usersClassName = temp;
 						requireAuthentication = serverElement.getAttribute("requireAuthentication").equals("yes");
+						enableStageProfiling = !serverElement.getAttribute("enableStageProfiling").equals("no");
 
 						//Set the proxy parameters
 						ProxyServer.getInstance(serverElement);
@@ -202,11 +204,9 @@ public class Configuration {
 						String className = childElement.getAttribute("class").trim();
 						if (!className.equals("")) {
 							try {
-								Class theClass = Class.forName(className);
-								Class[] signature = { Element.class };
-								Constructor constructor = theClass.getConstructor(signature);
-								Object[] args = { childElement };
-								Plugin plugin = (Plugin)constructor.newInstance(args);
+								Class<?> theClass = Class.forName(className);
+								Constructor<?> constructor = theClass.getConstructor(Element.class);
+								Plugin plugin = (Plugin)constructor.newInstance(childElement);
 								registerPlugin(plugin);
 								pluginsList.add(plugin);
 								if (className.equals("mirc.MIRC")) isMIRC = true;
@@ -228,7 +228,7 @@ public class Configuration {
 	private String logManifestAttribute(File jarFile, String name, String prefix) {
 		String value = "";
 		if (jarFile.exists()) {
-			Hashtable<String,String> manifest = JarUtil.getManifestAttributes(jarFile);
+			java.util.Map<String,String> manifest = JarUtil.getManifestAttributes(jarFile);
 			if (manifest != null) {
 				value = manifest.get(name);
 				if (value != null) logger.info(prefix + value);
@@ -404,6 +404,14 @@ public class Configuration {
 	}
 
 	/**
+	 * Determine whether stage profiling is enabled.
+	 * @return true if stage profiling is enabled; false otherwise.
+	 */
+	public boolean getEnableStageProfiling() {
+		return enableStageProfiling;
+	}
+
+	/**
 	 * Get the computer's IP address from the OS.
 	 * @return the computer's IP address.
 	 */
@@ -488,10 +496,48 @@ public class Configuration {
 		return pluginsList;
 	}
 
+	/**
+	 * Deep-clones the config DOM and replaces sensitive attribute values with
+	 * "[redacted]" before serialising to a string for logging.
+	 * Package-visible for testing.
+	 */
+	static String sanitizeForLogging(Element root) {
+		try {
+			Document cloneDoc = DocumentBuilderFactory.newInstance()
+					.newDocumentBuilder().newDocument();
+			Element cloneRoot = (Element) cloneDoc.importNode(root, true);
+			cloneDoc.appendChild(cloneRoot);
+			redactSensitiveAttributes(cloneRoot);
+			return XmlUtil.toPrettyString(cloneRoot);
+		} catch (Exception ex) {
+			return "[config sanitization failed: " + ex.getMessage() + "]";
+		}
+	}
+
+	private static void redactSensitiveAttributes(Element el) {
+		NamedNodeMap attrs = el.getAttributes();
+		for (int i = 0; i < attrs.getLength(); i++) {
+			Node attr = attrs.item(i);
+			String name = attr.getNodeName();
+			if ("password".equals(name)
+					|| "keystorePassword".equals(name)
+					|| "truststorePassword".equals(name)) {
+				attr.setNodeValue("[redacted]");
+			}
+		}
+		Node child = el.getFirstChild();
+		while (child != null) {
+			if (child.getNodeType() == Node.ELEMENT_NODE) {
+				redactSensitiveAttributes((Element) child);
+			}
+			child = child.getNextSibling();
+		}
+	}
+
 	//Check the root directories of all the
 	//pipeline stages and log any duplicates.
 	private void logDuplicateRoots() {
-		Hashtable<File,PipelineStage> roots = new Hashtable<File,PipelineStage>();
+		ConcurrentHashMap<File,PipelineStage> roots = new ConcurrentHashMap<File,PipelineStage>();
 		for (Pipeline pipe : pipelines) {
 			for (PipelineStage stage : pipe.getStages()) {
 				File root = stage.getRoot();

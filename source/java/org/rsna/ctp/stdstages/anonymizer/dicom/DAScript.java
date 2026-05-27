@@ -12,7 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.StringReader;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +30,7 @@ public class DAScript {
 
 	static final Logger logger = Logger.getLogger(DAScript.class);
 
-	static Hashtable<String,DAScript> scripts = new Hashtable<String,DAScript>();
+	static ConcurrentHashMap<String,DAScript> scripts = new ConcurrentHashMap<String,DAScript>();
 
 	public File file;
 	public String script;

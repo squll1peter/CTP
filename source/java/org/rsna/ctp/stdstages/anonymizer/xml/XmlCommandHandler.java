@@ -36,7 +36,7 @@ class XmlCommandHandler {
 	 */
 	public XmlCommand getNextCommand() throws Exception {
 		if (line == null) return null;
-		StringBuffer sb = new StringBuffer(line);
+		StringBuilder sb = new StringBuilder(line);
 		boolean done = false;
 		while ( ((line = br.readLine()) != null)
 				&& !line.startsWith("$") && !line.startsWith("/")

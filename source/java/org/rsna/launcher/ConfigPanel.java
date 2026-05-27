@@ -728,7 +728,7 @@ public class ConfigPanel extends BasePanel {
 			}
 		}
 		public String getDuplicates() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for (String attrValue : keySet()) {
 				Integer i = get(attrValue);
 				if (i.intValue() > 1) {

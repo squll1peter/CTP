@@ -105,8 +105,7 @@ public abstract class AbstractImportService extends AbstractPipelineStage implem
 			File qFile = getQueueManager().enqueue(file);
 			//Now log the file. Here, we're logging the enqueued
 			//file instead of the version in the temp directory.
-			lastFileIn = qFile;
-			lastTimeIn = System.currentTimeMillis();
+			recordFileIn(qFile);
 		}
 		//Enqueuing the file does not delete it
 		//from the source directory, so we have to
@@ -123,9 +122,7 @@ public abstract class AbstractImportService extends AbstractPipelineStage implem
 		if (queueManager != null) {
 			while ((file = queueManager.dequeue(active)) != null) {
 				if (file.length() > 0) {
-					lastFileOut = file;
-					lastTimeOut = System.currentTimeMillis();
-					FileObject fileObject = FileObject.getInstance(lastFileOut);
+					FileObject fileObject = FileObject.getInstance(file);
 					fileObject.setStandardExtension();
 
 					if (logDuplicates) {
@@ -155,6 +152,7 @@ public abstract class AbstractImportService extends AbstractPipelineStage implem
 
 					//Make sure we accept objects of this type.
 					if (acceptable(fileObject)) {
+						recordFileOut(file);
 						if (logger.isDebugEnabled()) {
 							logger.debug("supplying "+fileObject.getType()+" (length = "+fileObject.getFile().length()+")");
 						}
@@ -164,7 +162,10 @@ public abstract class AbstractImportService extends AbstractPipelineStage implem
 					//If we get here, this import service does not accept
 					//objects of the active type. Try to quarantine the
 					//object, and if that fails, delete it.
-					if (quarantine != null)  quarantine.insert(fileObject);
+					if (quarantine != null) {
+						quarantine.insert(fileObject);
+						recordQuarantine();
+					}
 					else fileObject.getFile().delete();
 				}
 			}
@@ -188,7 +189,7 @@ public abstract class AbstractImportService extends AbstractPipelineStage implem
 			for (int i=0; i<5; i++) {
 				if (ok = file.delete()) break;
 				try { Thread.sleep(100); }
-				catch (Exception ex) { }
+				catch (Exception ignore) { Thread.currentThread().interrupt(); }
 			}
 			if (!ok) {
 				logger.warn("Unable to release the processed file from the active directory:\n"

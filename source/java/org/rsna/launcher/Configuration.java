@@ -8,7 +8,10 @@
 package org.rsna.launcher;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -64,6 +67,7 @@ public class Configuration {
 	}
 
 	protected Configuration() throws Exception {
+		ensureConfigFile();
 
 		//Get the configuration parameters from the CTP config file.
 		configXML = XmlUtil.getDocument(configFile);
@@ -103,22 +107,22 @@ public class Configuration {
 		File jai = getFile(extDir, "jai_imageio", ".jar");
 		imageIOTools = (clib != null) && clib.exists() && (jai != null) && jai.exists();
 		if (imageIOTools) {
-			Hashtable<String,String> jaiManifest = JarUtil.getManifestAttributes(jai);
+			java.util.Map<String,String> jaiManifest = JarUtil.getManifestAttributes(jai);
 			imageIOVersion  = jaiManifest.get("Implementation-Version");
 		}
 
 		//Get the CTP.jar parameters
-		Hashtable<String,String> manifest = JarUtil.getManifestAttributes(ctp);
+		java.util.Map<String,String> manifest = JarUtil.getManifestAttributes(ctp);
 		ctpDate = manifest.get("Date");
 		ctpJava = manifest.get("Java-Version");
 
 		//Get the util.jar parameters
-		Hashtable<String,String> utilManifest = JarUtil.getManifestAttributes(new File("libraries/util.jar"));
+		java.util.Map<String,String> utilManifest = JarUtil.getManifestAttributes(new File("libraries/util.jar"));
 		utilDate = utilManifest.get("Date");
 		utilJava = utilManifest.get("Java-Version");
 
 		//Get the MIRC.jar parameters (if the plugin is present)
-		Hashtable<String,String> mircManifest = JarUtil.getManifestAttributes(new File("libraries/MIRC.jar"));
+		java.util.Map<String,String> mircManifest = JarUtil.getManifestAttributes(new File("libraries/MIRC.jar"));
 		if (mircManifest != null) {
 			mircJava = mircManifest.get("Java-Version");
 			mircDate = mircManifest.get("Date");
@@ -126,7 +130,7 @@ public class Configuration {
 		}
 
 		//Get the ISN.jar parameters
-		Hashtable<String,String> isnManifest = JarUtil.getManifestAttributes(new File("libraries/isn/ISN.jar"));
+		java.util.Map<String,String> isnManifest = JarUtil.getManifestAttributes(new File("libraries/isn/ISN.jar"));
 		if (isnManifest != null) {
 			isnJava = isnManifest.get("Java-Version");
 			isnDate = isnManifest.get("Date");
@@ -134,7 +138,7 @@ public class Configuration {
 		}
 
 		//Get the TCIA.jar parameters
-		Hashtable<String,String> tciaManifest = JarUtil.getManifestAttributes(new File("libraries/TCIAPlugin.jar"));
+		java.util.Map<String,String> tciaManifest = JarUtil.getManifestAttributes(new File("libraries/TCIAPlugin.jar"));
 		if (tciaManifest != null) {
 			tciaJava = tciaManifest.get("Java-Version");
 			tciaDate = tciaManifest.get("Date");
@@ -165,6 +169,29 @@ public class Configuration {
 		if ((mx == null) || mx.trim().equals("")) props.setProperty("mx", "256");
 		String ms = props.getProperty("ms");
 		if ((ms == null) || ms.trim().equals("")) props.setProperty("ms", "128");
+	}
+
+	private void ensureConfigFile() throws Exception {
+		if (configFile.exists()) return;
+
+		File[] defaults = new File[] {
+			new File("examples/example-config.xml"),
+			new File("source/files/examples/example-config.xml"),
+			new File("source/config/config.xml")
+		};
+
+		for (File src : defaults) {
+			if (src.exists()) {
+				Files.copy(src.toPath(), configFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				return;
+			}
+		}
+
+		throw new FileNotFoundException(
+			"Unable to locate a default configuration file. Tried: "
+			+ "examples/example-config.xml, "
+			+ "source/files/examples/example-config.xml, "
+			+ "source/config/config.xml");
 	}
 
 	private File getFile(File dir, String nameStart, String nameEnd) {

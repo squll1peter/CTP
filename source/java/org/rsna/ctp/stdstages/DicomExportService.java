@@ -14,7 +14,6 @@ import org.rsna.ctp.pipeline.AbstractExportService;
 import org.rsna.ctp.pipeline.Status;
 import org.rsna.ctp.stdstages.dicom.DicomStorageSCU;
 import org.rsna.ctp.objects.DicomObject;
-import org.rsna.ctp.pipeline.Status;
 import org.rsna.util.StringUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

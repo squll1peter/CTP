@@ -46,7 +46,6 @@ import org.w3c.dom.Node;
 /**
  * The ClinicalTrialProcessor program.
  */
-@SuppressWarnings("unchecked")
 public class ClinicalTrialProcessor {
 
 	static final File libraries = new File("libraries");
@@ -71,10 +70,10 @@ public class ClinicalTrialProcessor {
 
 		//Load the class and instantiate it
 		try {
-			Class ctpClass = cl.loadClass(mainClassName);
-			ctpClass.getConstructor( new Class[0] ).newInstance( new Object[0] );
+			Class<?> ctpClass = cl.loadClass(mainClassName);
+			ctpClass.getConstructor( new Class<?>[0] ).newInstance( new Object[0] );
 		}
-		catch (Exception unable) { unable.printStackTrace(); }
+		catch (Exception unable) { System.err.println("Error loading class: "+unable.getMessage()); }
 	}
 
 	/**
@@ -132,7 +131,7 @@ public class ClinicalTrialProcessor {
 			}
 			else System.out.println("Unable to service the shutdown request from ServiceManager.");
 		}
-		catch (Exception keepRunning) { keepRunning.printStackTrace(); }
+		catch (Exception keepRunning) { System.err.println("Error in stopService: "+keepRunning.getMessage()); }
 	}
 
 	/**
@@ -174,8 +173,8 @@ public class ClinicalTrialProcessor {
 		String[] roles = { "read", "delete", "import", "export", "qadmin", "guest", "proxy" };
 		for (String role : roles) users.addRole(role);
 
-		//Disable session timeouts for the server
-		Authenticator.getInstance().setSessionTimeout( 0L );
+		//Set session timeout to 4 hours (security hardening: was 0 = infinite)
+		Authenticator.getInstance().setSessionTimeout( 4L * 60L * 60L * 1000L );
 
 		//Create the ServletSelector for the HttpServer
 		ServletSelector selector =

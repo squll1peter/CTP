@@ -117,13 +117,13 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 	 * if the object could not be stored.
 	 */
 	public synchronized FileObject store(FileObject fileObject) {
-		logger.debug("File received for storage: "+fileObject.getFile());
+		if (logger.isDebugEnabled()) logger.debug("File received for storage: "+fileObject.getFile());
 
 		//Count all the files
 		totalCount++;
 
 		if (acceptable(fileObject) && checkFilter(fileObject)) {
-			logger.debug("Object received for storage: "+fileObject.getClass().getName());
+			if (logger.isDebugEnabled()) logger.debug("Object received for storage: "+fileObject.getClass().getName());
 
 			//Get a place to store the object.
 			File destDir = root;
@@ -131,7 +131,7 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 
 			if (fileObject instanceof DicomObject) {
 				DicomObject dob = (DicomObject)fileObject;
-				logger.debug("name: "+name);
+				if (logger.isDebugEnabled()) logger.debug("name: "+name);
 				if (dob.isDICOMDIR() && (name == null)) name = dob.getSOPInstanceUID();
 
 				//If there is a dirs array, get the storage hierarchy.
@@ -187,7 +187,7 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 			name = name.replaceAll(filter, "");
 			while (name.endsWith(".")) name = name.substring(0, name.length()-1);
 			name = name.trim();
-			logger.debug("...filtered filename: "+name);
+			if (logger.isDebugEnabled()) logger.debug("...filtered filename: "+name);
 
 			//Count the accepted objects
 			acceptedCount++;
@@ -210,7 +210,7 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 			File tempFile = new File(destDir, name+".partial");
 			File savedFile = new File(destDir, name);
 			int pathLength = savedFile.getAbsolutePath().length();
-			logger.debug("...absolute path length: "+pathLength);
+			if (logger.isDebugEnabled()) logger.debug("...absolute path length: "+pathLength);
 			if (pathLength > maxPathLength) {
 				logger.warn("File path is too long for storage:\n"+savedFile);
 				return null;
@@ -224,7 +224,7 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 					if (returnStoredFile) fileObject = FileObject.getInstance(savedFile);
 					lastFileStored = savedFile;
 					lastTime = System.currentTimeMillis();
-					logger.debug("...file stored successfully: "+savedFile);
+					if (logger.isDebugEnabled()) logger.debug("...file stored successfully: "+savedFile);
 				}
 				//If anything went wrong, quarantine the object and abort.
 				else {
@@ -299,7 +299,7 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 			Pattern pattern = Pattern.compile( singleTag + "(::"+singleTag+")*" );
 
 			Matcher matcher = pattern.matcher(string);
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			while (matcher.find()) {
 				String group = matcher.group();
 				String repl = getElementValue(dob, group);
@@ -327,7 +327,7 @@ public class DirectoryStorageService extends AbstractPipelineStage implements St
 	 * @return HTML text displaying the current status of the stage.
 	 */
 	public synchronized String getStatusHTML() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 		sb.append("<tr><td width=\"20%\">Files received for storage:</td>"

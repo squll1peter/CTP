@@ -38,6 +38,7 @@ public class EmailSender {
 		if (smtpPort != null) props.put("mail.smtp.port", smtpPort);
 		if (tls) props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
 		props.put("mail.smtp.starttls.enable", Boolean.toString(tls));
+		props.put("mail.smtp.starttls.required", Boolean.toString(tls));
 		if ( (senderUsername != null) && (senderPassword != null) &&
 				!senderUsername.trim().equals("") && !senderPassword.trim().equals("") ) {
 			props.put("mail.smtp.auth", "true");

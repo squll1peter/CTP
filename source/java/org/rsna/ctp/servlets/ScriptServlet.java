@@ -60,10 +60,10 @@ public class ScriptServlet extends CTPServlet {
 	 * @param res The HttpServletResponse provided by the servlet container.
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -108,10 +108,10 @@ public class ScriptServlet extends CTPServlet {
 	 * @param res The HttpResponse provided by the servlet container.
 	 */
 	public void doPost(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized || !req.isReferredFrom(context)) {
+		if (!authState.isAuthorized || !req.isReferredFrom(context)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -172,7 +172,7 @@ public class ScriptServlet extends CTPServlet {
 	}
 
 	private String makeList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Configuration config = Configuration.getInstance();
 		List<Pipeline> pipelines = config.getPipelines();
 		if (pipelines.size() != 0) {
@@ -221,7 +221,7 @@ public class ScriptServlet extends CTPServlet {
 	private String makeForm(int p, int s, int f, File scriptFile) {
 		String script = FileUtil.getText(scriptFile);
 
-		StringBuffer form = new StringBuffer();
+		StringBuilder form = new StringBuilder();
 		form.append("<form method=\"POST\" accept-charset=\"UTF-8\" action=\"/"+context+"\">\n");
 		form.append(hidden("p", p + ""));
 		form.append(hidden("s", s + ""));

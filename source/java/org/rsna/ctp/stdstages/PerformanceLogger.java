@@ -59,7 +59,7 @@ public class PerformanceLogger extends AbstractPipelineStage implements Processo
 
 		if ((count % interval) == 0) {
 			Pipeline pipe = getPipeline();
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for (PipelineStage stage : pipe.getStages()) {
 				long timeOut = stage.getLastFileOutTime();
 				long processTime = 0;

@@ -10,7 +10,6 @@ package org.rsna.ctp.servlets;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.LinkedList;
 import org.apache.log4j.Logger;
 import org.rsna.ctp.Configuration;
 import org.rsna.ctp.plugin.Plugin;
@@ -55,13 +54,13 @@ public class SummaryServlet extends CTPServlet {
 	 * @param res The HttpServletResponse provided by the servlet container.
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Get the parameters.
 		int x = StringUtil.getInt(req.getParameter("plugin"), -1);
 
 		//Return the page
-		res.write(getPage(p, s, x));
+		res.write(getPage(p, s, x, authState));
 		res.setContentType("html");
 		res.setContentEncoding(req);
 		res.disableCaching();
@@ -104,17 +103,17 @@ public class SummaryServlet extends CTPServlet {
 	}
 
 	//Create an HTML page containing the list of files.
-	private String getPage(int p, int s, int x) {
-		if (x != -1) return getPluginPage(x);
+	private String getPage(int p, int s, int x, CTPServlet.AuthState authState) {
+		if (x != -1) return getPluginPage(x, authState);
 		else if (p == -1) return getAllPipelinesPage();
 		else if (s == -1) return getPipelinePage(p);
-		else return getStagePage(p, s);
+		else return getStagePage(p, s, authState);
 	}
 
-	private String getPluginPage(int x) {
+	private String getPluginPage(int x, CTPServlet.AuthState authState) {
 		Plugin plugin = getPlugin(x);
 		if (plugin != null) {
-			StringBuffer sb = new StringBuffer( responseHead("Plugin Summary") );
+			StringBuilder sb = new StringBuilder( responseHead("Plugin Summary") );
 			sb.append("<table class=\"summary\">" + tableHeadings() + "\n");
 			Configuration config = Configuration.getInstance();
 			List<Pipeline> pipelines = config.getPipelines();
@@ -128,7 +127,7 @@ public class SummaryServlet extends CTPServlet {
 			sb.append( "<h2>Status</h2>\n" );
 			sb.append( plugin.getStatusHTML() );
 			sb.append( getLinks(plugin.getLinks(user)) );
-			if (userIsAuthorized) {
+			if (authState.isAuthorized) {
 				sb.append( "<h2>Configuration</h2>\n" );
 				sb.append( plugin.getConfigHTML(user) );
 			}
@@ -141,7 +140,7 @@ public class SummaryServlet extends CTPServlet {
 	}
 
 	private String getAllPipelinesPage() {
-		StringBuffer sb = new StringBuffer( responseHead("System Summary") );
+		StringBuilder sb = new StringBuilder( responseHead("System Summary") );
 		sb.append("<table class=\"summary\">" + tableHeadings() + "\n");
 		Configuration config = Configuration.getInstance();
 		List<Pipeline> pipelines = config.getPipelines();
@@ -156,7 +155,7 @@ public class SummaryServlet extends CTPServlet {
 	private String getPipelinePage(int p) {
 		Pipeline pipe = getPipeline(p);
 		if (pipe != null) {
-			StringBuffer sb = new StringBuffer( responseHead("Pipeline Summary") );
+			StringBuilder sb = new StringBuilder( responseHead("Pipeline Summary") );
 			sb.append("<table class=\"summary\">" + tableHeadings() + "\n");
 			sb.append(getPipelineSummary(pipe));
 			sb.append("</table>\n");
@@ -179,12 +178,12 @@ public class SummaryServlet extends CTPServlet {
 		return (k>0) ? host.substring(0,k) : host;
 	}
 
-	private String getStagePage(int p, int s) {
+	private String getStagePage(int p, int s, CTPServlet.AuthState authState) {
 		Pipeline pipe = getPipeline(p);
 		if (pipe != null) {
 			PipelineStage stage = getPipelineStage(p, s);
 			if (stage != null) {
-				StringBuffer sb = new StringBuffer( responseHead("Stage Summary") );
+				StringBuilder sb = new StringBuilder( responseHead("Stage Summary") );
 				sb.append("<table class=\"summary\">" + tableHeadings() + "\n");
 				sb.append(getPipelineSummary(pipe));
 				sb.append("</table>\n");
@@ -194,7 +193,7 @@ public class SummaryServlet extends CTPServlet {
 				sb.append( "<h2>Status</h2>\n" );
 				sb.append( stage.getStatusHTML() );
 				sb.append( getLinks(stage.getLinks(user)) );
-				if (userIsAuthorized) {
+				if (authState.isAuthorized) {
 					sb.append( "<h2>Configuration</h2>\n" );
 					sb.append( stage.getConfigHTML(user) );
 				}
@@ -208,7 +207,7 @@ public class SummaryServlet extends CTPServlet {
 	}
 
 	private String getLinks(LinkedList<SummaryLink> links) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (SummaryLink link : links) {
 			String url = link.getURL();
 			url += (url.contains("?") ? "&" : "?") + "suppress";
@@ -233,7 +232,7 @@ public class SummaryServlet extends CTPServlet {
 	}
 
 	private String getPipelineSummary(Pipeline pipe) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<tr>");
 		sb.append("<td class=\"name\">"+pipe.getName()+"</td>");
 		sb.append("<td class=\"number\">"+String.format("%,d",getImportQueueTotal(pipe))+"</td>");
@@ -287,14 +286,15 @@ public class SummaryServlet extends CTPServlet {
 	}
 
 	private String responseHead(String title) {
+		String v = "?v=20260527a";
 		String head =
 				"<html>\n"
 			+	" <head>\n"
 			+	"  <title>"+title+"</title>\n"
-			+	"  <link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/BaseStyles.css\"></link>\n"
-			+	"  <link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/SummaryServlet.css\"></link>\n"
-			+	"  <script language=\"JavaScript\" type=\"text/javascript\" src=\"/JSUtil.js\">;</script>\n"
-			+	"  <script language=\"JavaScript\" type=\"text/javascript\" src=\"/SummaryServlet.js\">;</script>\n"
+			+	"  <link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/BaseStyles.css"+v+"\"></link>\n"
+			+	"  <link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/SummaryServlet.css"+v+"\"></link>\n"
+			+	"  <script language=\"JavaScript\" type=\"text/javascript\" src=\"/JSUtil.js"+v+"\">;</script>\n"
+			+	"  <script language=\"JavaScript\" type=\"text/javascript\" src=\"/SummaryServlet.js"+v+"\">;</script>\n"
 			+	" </head>\n"
 			+	" <body>\n"
 			+	"  <h1>"+title+"</h1>\n"

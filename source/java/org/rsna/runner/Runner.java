@@ -28,6 +28,7 @@ import org.w3c.dom.NamedNodeMap;
 public class Runner {
 
 	static File configFile = new File("config.xml");
+	static File defaultConfigFile = new File("examples/example-config.xml");
 	static File propsFile = new File("Launcher.properties");
 	static File ctp = new File("libraries/CTP.jar");
 	static int port = 0;
@@ -36,6 +37,17 @@ public class Runner {
 
 	public static void main(String args[]) {
 		Document configXML = getDocument(configFile);
+		if ((configXML == null) && defaultConfigFile.exists()) {
+			System.err.println("Warning: Unable to read config.xml; using examples/example-config.xml");
+			configFile = defaultConfigFile;
+			configXML = getDocument(configFile);
+		}
+		if (configXML == null) {
+			System.err.println("Error: Unable to read configuration file.");
+			System.err.println("Looked for: " + new File("config.xml").getAbsolutePath());
+			System.err.println("Fallback:   " + defaultConfigFile.getAbsolutePath());
+			System.exit(1);
+		}
 		port = getInt( getAttribute(configXML, "Server", "port"), 80 );
 		ssl = getAttribute(configXML, "Server", "ssl").equals("yes");
 
@@ -204,7 +216,7 @@ public class Runner {
 			conn.setRequestProperty("servicemanager", "shutdown");
 			conn.connect();
 
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			BufferedReader br = new BufferedReader( new InputStreamReader(conn.getInputStream(), "UTF-8") );
 			int n; char[] cbuf = new char[1024];
 			while ((n=br.read(cbuf, 0, cbuf.length)) != -1) sb.append(cbuf,0,n);
@@ -221,7 +233,7 @@ public class Runner {
 			conn.setRequestMethod("GET");
 			conn.connect();
 			int length = conn.getContentLength();
-			StringBuffer text = new StringBuffer();
+			StringBuilder text = new StringBuilder();
 			InputStream is = conn.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 			int size = 256; char[] buf = new char[size]; int len;
@@ -244,7 +256,6 @@ public class Runner {
 		HttpURLConnection conn;
 		if (protocol.startsWith("https")) {
 			HttpsURLConnection httpsConn = (HttpsURLConnection)url.openConnection();
-			httpsConn.setHostnameVerifier(new AcceptAllHostnameVerifier());
 			httpsConn.setUseCaches(false);
 			httpsConn.setDefaultUseCaches(false);
 			conn = httpsConn;
@@ -253,12 +264,6 @@ public class Runner {
 		conn.setDoOutput(true);
 		conn.setDoInput(true);
 		return conn;
-	}
-
-	static class AcceptAllHostnameVerifier implements HostnameVerifier {
-		public boolean verify(String urlHost, SSLSession ssls) {
-			return true;
-		}
 	}
 
 	public static void clearLogs() {
@@ -289,6 +294,12 @@ public class Runner {
 		try {
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			dbf.setNamespaceAware(true);
+			dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+			dbf.setFeature("http://xml.org/sax/features/external-general-entities", false);
+			dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+			dbf.setXIncludeAware(false);
+			dbf.setExpandEntityReferences(false);
 			DocumentBuilder db = dbf.newDocumentBuilder();
 			return db.parse(file);
 		}
@@ -296,7 +307,9 @@ public class Runner {
 	}
 
 	public static String getAttribute( Document doc, String eName, String aName ) {
+		if (doc == null) return "";
 		Element root = doc.getDocumentElement();
+		if (root == null) return "";
 		NodeList nl = root.getElementsByTagName( eName );
 		for (int i=0; i<nl.getLength(); i++) {
 			String attr = ((Element)nl.item(i)).getAttribute( aName ).trim();

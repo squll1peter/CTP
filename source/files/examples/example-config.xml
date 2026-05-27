@@ -1,6 +1,6 @@
 <Configuration>
 
-   <Server port="80" />
+    <Server port="8080" enableStageProfiling="yes" />
 
    <Pipeline name="Client Pipeline">
 
@@ -31,6 +31,7 @@
             name="Client Directory Import"
             class="org.rsna.ctp.stdstages.DirectoryImportService"
             root="test/roots/client/directory-import"
+            import="test/import/client/directory-import"
             minAge="5000"
             quarantine="test/quarantines/client/directory-import" />
 

@@ -9,7 +9,7 @@ package org.rsna.ctp.stdstages.anonymizer.dicom;
 
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Properties;
@@ -52,7 +52,7 @@ public class DICOMAnonymizerContext {
 	public boolean kspe; //keep safe private elements
 
 	public int[] keepGroups;
-	public Hashtable<Integer,String> scriptTable;
+	public ConcurrentHashMap<Integer,String> scriptTable;
 
 	LinkedList<Dataset> inStack;
 	LinkedList<Dataset> outStack;
@@ -94,9 +94,9 @@ public class DICOMAnonymizerContext {
 		rc  = (cmds.getProperty("remove.curves") != null);
 		kspe = (cmds.getProperty("keep.safeprivateelements") != null);
 
-		//Set up the keepGroups and the script Hashtable
+		//Set up the keepGroups and the script ConcurrentHashMap
 		LinkedList<String> list = new LinkedList<String>();
-		scriptTable = new Hashtable<Integer,String>();
+		scriptTable = new ConcurrentHashMap<Integer,String>();
 
 		for (Enumeration it=cmds.keys(); it.hasMoreElements(); ) {
 			String key = (String)it.nextElement();
@@ -471,14 +471,14 @@ public class DICOMAnonymizerContext {
 
 	class PrivateGroupsIndex {
 
-		Hashtable<Integer,PrivateGroupIndex> index;
+		ConcurrentHashMap<Integer,PrivateGroupIndex> index;
 		Dataset ds;
 		SpecificCharacterSet cs;
 
 		public PrivateGroupsIndex( Dataset ds ) {
 			this.ds = ds;
 			cs = ds.getSpecificCharacterSet();
-			index = new Hashtable<Integer,PrivateGroupIndex>();
+			index = new ConcurrentHashMap<Integer,PrivateGroupIndex>();
 
 			for (Iterator it=ds.iterator(); it.hasNext(); ) {
 				DcmElement el = (DcmElement)it.next();
@@ -524,9 +524,9 @@ public class DICOMAnonymizerContext {
 		}
 
 		class PrivateGroupIndex {
-			Hashtable<String,Integer> index;
+			ConcurrentHashMap<String,Integer> index;
 			public PrivateGroupIndex() {
-				index = new Hashtable<String,Integer>();
+				index = new ConcurrentHashMap<String,Integer>();
 			}
 			public void put(String id, Integer tag) {
 				if (id == null) return;

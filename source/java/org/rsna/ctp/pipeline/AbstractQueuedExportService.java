@@ -117,39 +117,43 @@ public abstract class AbstractQueuedExportService
 	 * @param fileObject the object to be exported.
 	 */
 	public void export(FileObject fileObject) {
-		lastFileIn = fileObject.getFile();
-		lastTimeIn = System.currentTimeMillis();
+		recordFileIn(fileObject.getFile());
+		boolean enqueued = false;
 		if (fileObject instanceof DicomObject) {
 			if (acceptDicomObjects) {
 				if (((DicomObject)fileObject).matches(dicomScriptFile))
-							enqueue(fileObject);
+							enqueued = enqueue(fileObject);
 			}
 		}
 		else if (fileObject instanceof XmlObject) {
 			if (acceptXmlObjects) {
 				if (((XmlObject)fileObject).matches(xmlScriptFile))
-							enqueue(fileObject);
+							enqueued = enqueue(fileObject);
 			}
 		}
 		else if (fileObject instanceof ZipObject) {
 			if (acceptZipObjects) {
 				if (((ZipObject)fileObject).matches(zipScriptFile))
-							enqueue(fileObject);
+							enqueued = enqueue(fileObject);
 			}
 		}
-		else if (acceptFileObjects) enqueue(fileObject);
-		lastFileOut = new File(fileObject.getFile().getAbsolutePath());
-		lastTimeOut = System.currentTimeMillis();
+		else if (acceptFileObjects) enqueued = enqueue(fileObject);
+		if (enqueued) recordFileOut(fileObject.getFile());
 	}
 
 	//Queue a fileObject.
 	//Note: if caching is enabled, this puts the object in the cache;
 	//if caching is not enabled, it puts the object directly in the export queue
 	//because in that case cacheManager and queueManger point to the same queue.
-	private void enqueue(FileObject fileObject) {
+	private boolean enqueue(FileObject fileObject) {
 		if (cacheManager.enqueue(lastFileIn) == null) {
-			if (quarantine != null) quarantine.insertCopy(fileObject);
+			if (quarantine != null) {
+				quarantine.insertCopy(fileObject);
+				recordQuarantine();
+			}
+			return false;
 		}
+		return true;
 	}
 
 	/**
@@ -214,7 +218,7 @@ public abstract class AbstractQueuedExportService
 	 * @return HTML text displaying the active status of the stage.
 	 */
 	public synchronized String getStatusHTML(String childUniqueStatus) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<tr><td width=\"20%\">Export queue size:</td>");
 		sb.append("<td>" + ((queueManager!=null) ? queueManager.size() : "???") + "</td></tr>");
 		sb.append("<tr><td width=\"20%\">Last file dequeued:</td>");

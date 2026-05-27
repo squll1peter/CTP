@@ -9,6 +9,8 @@ package org.rsna.ctp.pipeline;
 
 import java.io.File;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicLong;
+import org.rsna.ctp.Configuration;
 import org.rsna.ctp.objects.*;
 import org.rsna.ctp.servlets.SummaryLink;
 import org.rsna.server.User;
@@ -42,6 +44,11 @@ public abstract class AbstractPipelineStage implements PipelineStage {
 	protected volatile long lastTimeIn = 0;
 	protected volatile File lastFileOut = null;
 	protected volatile long lastTimeOut = 0;
+	protected final AtomicLong totalIn = new AtomicLong(0);
+	protected final AtomicLong totalPassed = new AtomicLong(0);
+	protected final AtomicLong totalQuarantined = new AtomicLong(0);
+	protected final AtomicLong totalProcessTime = new AtomicLong(0);
+	protected final AtomicLong totalProcessCount = new AtomicLong(0);
 	protected volatile boolean stop = false;
 	protected Pipeline pipeline = null;
 	protected String pipelinePath = "";
@@ -278,7 +285,7 @@ public abstract class AbstractPipelineStage implements PipelineStage {
 	 */
 	public synchronized String getConfigHTML(User user) {
 		boolean admin = (user != null) && user.hasRole("admin");
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 		NamedNodeMap attrs = element.getAttributes();
@@ -308,7 +315,7 @@ public abstract class AbstractPipelineStage implements PipelineStage {
 
 	//Get a table for a configuration child element
 	private String getTableFor(Element element, boolean admin) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<table border=\"0\">");
 		NamedNodeMap attrs = element.getAttributes();
 		for (int i=0; i<attrs.getLength(); i++) {
@@ -330,6 +337,58 @@ public abstract class AbstractPipelineStage implements PipelineStage {
 	}
 
 	/**
+	 * Record a file arriving at this stage and increment the totalIn counter.
+	 * @param f the file received
+	 */
+	protected void recordFileIn(File f) {
+		lastFileIn = f;
+		lastTimeIn = System.currentTimeMillis();
+		totalIn.incrementAndGet();
+	}
+
+	/**
+	 * Record a file leaving this stage and increment the totalPassed counter.
+	 * @param f the file passed on
+	 */
+	protected void recordFileOut(File f) {
+		lastFileOut = f;
+		lastTimeOut = System.currentTimeMillis();
+		totalPassed.incrementAndGet();
+	}
+
+	/**
+	 * Record a file quarantined by this stage and increment the totalQuarantined counter.
+	 */
+	protected void recordQuarantine() {
+		totalQuarantined.incrementAndGet();
+	}
+
+	/**
+	 * Record elapsed processing time for a single pipeline-stage invocation.
+	 * @param nanos the elapsed time in nanoseconds.
+	 */
+	protected void recordProcessTime(long nanos) {
+		totalProcessTime.addAndGet(nanos);
+		totalProcessCount.incrementAndGet();
+	}
+
+	/**
+	 * Get the total processing time accumulated by the stage.
+	 * @return the total processing time in nanoseconds.
+	 */
+	protected long getTotalProcessTime() {
+		return totalProcessTime.get();
+	}
+
+	/**
+	 * Get the total number of times the stage has processed an object.
+	 * @return the total process count.
+	 */
+	protected long getTotalProcessCount() {
+		return totalProcessCount.get();
+	}
+
+	/**
 	 * Get HTML text displaying the current status of the stage.
 	 * @return HTML text displaying the current status of the stage.
 	 */
@@ -344,7 +403,7 @@ public abstract class AbstractPipelineStage implements PipelineStage {
 	 * @return HTML text displaying the current status of the stage.
 	 */
 	public synchronized String getStatusHTML(String childUniqueStatus) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 		sb.append(childUniqueStatus);
@@ -362,6 +421,21 @@ public abstract class AbstractPipelineStage implements PipelineStage {
 			sb.append("<td>"+StringUtil.getDateTime(lastTimeOut,"&nbsp;&nbsp;&nbsp;")+"</td></tr>");
 		}
 		else sb.append("<td>No activity</td></tr>");
+		sb.append("<tr><td width=\"20%\">Files received:</td><td>"+totalIn.get()+"</td></tr>");
+		sb.append("<tr><td width=\"20%\">Files passed:</td><td>"+totalPassed.get()+"</td></tr>");
+		sb.append("<tr><td width=\"20%\">Files quarantined:</td><td>"+totalQuarantined.get()+"</td></tr>");
+		Configuration configuration = Configuration.getInstance();
+		boolean showProfilingStats = (configuration == null) || configuration.getEnableStageProfiling();
+		if (showProfilingStats) {
+			long processCount = totalProcessCount.get();
+			long processTime = totalProcessTime.get();
+			sb.append("<tr><td width=\"20%\">Stage invocations:</td><td>"+processCount+"</td></tr>");
+			sb.append("<tr><td width=\"20%\">Stage time:</td><td>"+(processTime / 1000000)+" ms</td></tr>");
+			if (processCount > 0) {
+				long avgMicros = (processTime / processCount) / 1000;
+				sb.append("<tr><td width=\"20%\">Avg stage time:</td><td>"+avgMicros+" microseconds</td></tr>");
+			}
+		}
 		sb.append("</table>");
 		return sb.toString();
 	}

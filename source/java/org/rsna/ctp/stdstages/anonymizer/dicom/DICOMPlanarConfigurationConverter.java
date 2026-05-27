@@ -14,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
@@ -65,10 +64,10 @@ public class DICOMPlanarConfigurationConverter {
 
 		long fileLength = inFile.length();
 		logger.debug("Entering DICOMPlanarConfigurationConverter.convert");
-		logger.debug("File length       = "+fileLength);
+		if (logger.isDebugEnabled()) logger.debug("File length       = "+fileLength);
 
 		BufferedInputStream in = null;
-		FileOutputStream out = null;
+			OutputStream out = null;
 		File tempFile = null;
 		byte[] buffer = new byte[4096];
 		try {
@@ -145,7 +144,7 @@ public class DICOMPlanarConfigurationConverter {
 			//Save the dataset to a temporary file, and rename at the end.
 			File tempDir = outFile.getParentFile();
 			tempFile = File.createTempFile("DCMtemp-", ".anon", tempDir);
-            out = new FileOutputStream(tempFile);
+            out = new java.io.BufferedOutputStream(new FileOutputStream(tempFile));
 
             //Create and write the metainfo for the encoding we are using
 			fmi = oFact.newFileMetaInfo(dataset, prefEncodingUID);
@@ -166,7 +165,7 @@ public class DICOMPlanarConfigurationConverter {
 			logger.debug("Finished writing the pixels");
 
 			 //Get ready for the next element
-			logger.debug("Stream position after processPixels = "+parser.getStreamPosition());
+			if (logger.isDebugEnabled()) logger.debug("Stream position after processPixels = "+parser.getStreamPosition());
 			if (parser.getStreamPosition() < fileLength) parser.parseHeader();
 
 			//Now do any elements after the pixels one at a time.
@@ -178,7 +177,7 @@ public class DICOMPlanarConfigurationConverter {
 						&& ((tag=parser.getReadTag()) != -1)
 							&& (tag != 0xFFFAFFFA)
 							&& (tag != 0xFFFCFFFC)) {
-				logger.debug("About to write post-pixels element "+Integer.toHexString(tag));
+				if (logger.isDebugEnabled()) logger.debug("About to write post-pixels element "+Integer.toHexString(tag));
 				dataset.writeHeader(
 					out,
 					encoding,
@@ -245,7 +244,7 @@ public class DICOMPlanarConfigurationConverter {
 							int columns) throws Exception {
 
 		int len = parser.getReadLength();
-		logger.debug("Read length       = "+len);
+		if (logger.isDebugEnabled()) logger.debug("Read length       = "+len);
 
 		int size = rows * columns;
 		byte[] r = new byte[size];
@@ -268,10 +267,10 @@ public class DICOMPlanarConfigurationConverter {
 		}
 		//Add a byte to the end if we have written an odd number of bytes
 		long nbytes = numberOfFrames * rows * columns * 3;
-		logger.debug("numberOfFrames    = "+numberOfFrames);
-		logger.debug("rows              = "+rows);
-		logger.debug("columns           = "+columns);
-		logger.debug("Total image bytes = "+nbytes);
+		if (logger.isDebugEnabled()) logger.debug("numberOfFrames    = "+numberOfFrames);
+		if (logger.isDebugEnabled()) logger.debug("rows              = "+rows);
+		if (logger.isDebugEnabled()) logger.debug("columns           = "+columns);
+		if (logger.isDebugEnabled()) logger.debug("Total image bytes = "+nbytes);
 		if ((nbytes & 1) != 0) out.write(0);
 
 		parser.setStreamPosition(parser.getStreamPosition() + len);

@@ -10,7 +10,7 @@ package org.rsna.ctp.stdstages.storage;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import org.apache.log4j.Logger;
 import org.rsna.ctp.objects.FileObject;
@@ -40,7 +40,7 @@ public class FileSystem {
 	int dirNameLength = 0;
 	File indexFile = null;
 	Document indexDoc = null;
-	Hashtable<String,Study> uidTable = null;
+	ConcurrentHashMap<String,Study> uidTable = null;
 	GuestList guestList = null;
 
 	/**
@@ -256,9 +256,9 @@ public class FileSystem {
 			Study study = uidTable.get(studyUID);
 			if (study != null) {
 				File studyDir = study.getDirectory();
-				logger.debug("...Study directory: "+studyDir);
+				if (logger.isDebugEnabled()) logger.debug("...Study directory: "+studyDir);
 				Element root = indexDoc.getDocumentElement();
-				logger.debug("...Index:\n"+XmlUtil.toPrettyString(root));
+				if (logger.isDebugEnabled()) logger.debug("...Index:\n"+XmlUtil.toPrettyString(root));
 				Node child = root.getFirstChild();
 				while (child != null) {
 					if ((child.getNodeType()==Node.ELEMENT_NODE)
@@ -298,9 +298,9 @@ public class FileSystem {
 	 */
 	public synchronized void deleteAll() {
 		String[] uids = uidTable.keySet().toArray( new String[uidTable.size()] );
-		logger.debug("Number of studies to delete: "+uids.length);
+		if (logger.isDebugEnabled()) logger.debug("Number of studies to delete: "+uids.length);
 		for (String uid : uids) {
-			logger.debug("...deleting: "+uid);
+			if (logger.isDebugEnabled()) logger.debug("...deleting: "+uid);
 			deleteStudyByUID(uid);
 		}
 	}
@@ -385,7 +385,7 @@ public class FileSystem {
 	 */
 	public Document getIndex() throws Exception {
 		if (indexDoc == null) {
-			uidTable = new Hashtable<String,Study>();
+			uidTable = new ConcurrentHashMap<String,Study>();
 			if (indexFile.exists()) {
 				indexDoc = XmlUtil.getDocument(indexFile);
 /**/			upgradeSchema();

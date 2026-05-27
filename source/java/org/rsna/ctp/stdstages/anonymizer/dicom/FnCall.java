@@ -165,7 +165,7 @@ public class FnCall {
 		int bracketCount = 0;
 		int parenCount = 0;
 		
-		StringBuffer arg = new StringBuffer();
+		StringBuilder arg = new StringBuilder();
 		while (currentIndex < call.length()) {
 			c = call.charAt(currentIndex);
 			if (!inEscape && !inQuote && !inBracket && !inParen) {
@@ -223,7 +223,7 @@ public class FnCall {
 		
 		//we have a clause, get it, checking for nested clauses
 		int count = 1;
-		StringBuffer clause = new StringBuffer();
+		StringBuilder clause = new StringBuilder();
 		while (currentIndex < call.length()) {
 			c = call.charAt(currentIndex);
 			if (c == '{') count++;

@@ -571,7 +571,7 @@ public class DICOMECGProcessor {
 		}
 		
 		public String toString() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append("label:       "+label+"\n");
 			sb.append("sensitivity: "+sensitivity+"\n");
 			sb.append("units:       "+sensitivityUnits+"\n");

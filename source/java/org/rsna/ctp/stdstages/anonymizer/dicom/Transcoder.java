@@ -220,13 +220,13 @@ public class Transcoder {
             transcode();
         }
         catch (Exception e) {
-			e.printStackTrace();
+			log.error("Transcoder failed: "+e.getMessage(), e);
         	return AnonymizerStatus.QUARANTINE(infile, e.getMessage());
         }
         finally {
             if (iis != null) {
                 try { iis.close(); }
-                catch (IOException e) { e.printStackTrace(); }
+                catch (IOException e) { log.warn("Error closing image input stream: "+e.getMessage(), e); }
             }
             if (ios != null) {
                 try {
@@ -235,7 +235,7 @@ public class Transcoder {
                     outfile.delete();
         			if (tempfile != null) tempfile.renameTo(outfile);
                 }
-                catch (IOException e) { e.printStackTrace(); }
+                catch (IOException e) { log.warn("Error cleaning up temp file: "+e.getMessage(), e); }
             }
         }
 		return AnonymizerStatus.OK(outfile, "");

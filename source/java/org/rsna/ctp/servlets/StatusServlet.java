@@ -24,7 +24,12 @@ import org.rsna.util.HtmlUtil;
 public class StatusServlet extends Servlet {
 
 	static final Logger logger = Logger.getLogger(StatusServlet.class);
+	private static final long STATUS_CACHE_TTL_MS = 1000;
 	String home = "/";
+	private volatile String cachedAdminStatusHtml = null;
+	private volatile long cachedAdminStatusTime = 0;
+	private volatile String cachedUserStatusHtml = null;
+	private volatile long cachedUserStatusTime = 0;
 
 	/**
 	 * Construct a StatusServlet.
@@ -42,34 +47,85 @@ public class StatusServlet extends Servlet {
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
 		Configuration config = Configuration.getInstance();
-
-		StringBuffer sb = new StringBuffer();
-		sb.append("<html>");
-		sb.append("<head>");
-		sb.append("<title>Status</title>");
-		sb.append("<link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/BaseStyles.css\"></link>");
-		sb.append("<style>");
-		sb.append("body {margin-top:0; margin-right:0; padding:0;}");
-		sb.append("td {background-color:white;}");
-		sb.append("h1 {margin-top:10; margin-bottom:0; font-family: Verdana, Arial, Helvetica, sans-serif;}");
-		sb.append("h2 {font-family: Verdana, Arial, Helvetica, sans-serif;}");
-		sb.append("</style>");
-		sb.append("</head><body>");
-		if (!req.hasParameter("suppress")) sb.append(HtmlUtil.getCloseBox(home));
-		sb.append("<center><h1>Status</h1></center>");
-
-		//Insert information for each pipeline
-		Iterator<Pipeline> pit = config.getPipelines().iterator();
-		while (pit.hasNext()) sb.append(pit.next().getStatusHTML());
-
-		sb.append("</body></html>");
+		boolean isAdmin = req.userHasRole("admin");
+		String html = getCachedOrBuildStatusHtml(config, isAdmin, req.hasParameter("suppress"));
 
 		//Send the response;
 		res.disableCaching();
-		res.write(sb.toString());
+		res.write(html);
 		res.setContentType("html");
 		res.setContentEncoding(req);
 		res.send();
+	}
+
+	private String getCachedOrBuildStatusHtml(Configuration config, boolean isAdmin, boolean suppressCloseBox) {
+		long now = System.currentTimeMillis();
+		if (isAdmin) {
+			String html = cachedAdminStatusHtml;
+			if ((html != null) && ((now - cachedAdminStatusTime) < STATUS_CACHE_TTL_MS)) return withCloseBox(html, suppressCloseBox);
+			html = buildStatusHtml(config, true);
+			cachedAdminStatusHtml = html;
+			cachedAdminStatusTime = now;
+			return withCloseBox(html, suppressCloseBox);
+		}
+		String html = cachedUserStatusHtml;
+		if ((html != null) && ((now - cachedUserStatusTime) < STATUS_CACHE_TTL_MS)) return withCloseBox(html, suppressCloseBox);
+		html = buildStatusHtml(config, false);
+		cachedUserStatusHtml = html;
+		cachedUserStatusTime = now;
+		return withCloseBox(html, suppressCloseBox);
+	}
+
+	private String withCloseBox(String html, boolean suppressCloseBox) {
+		if (suppressCloseBox) return html;
+		return html.replace("<body>", "<body>" + HtmlUtil.getCloseBox(home));
+	}
+
+	private String buildStatusHtml(Configuration config, boolean isAdmin) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("<html>");
+		sb.append("<head>");
+		sb.append("<title>Status</title>");
+		sb.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+		sb.append("<link rel=\"Stylesheet\" type=\"text/css\" media=\"all\" href=\"/BaseStyles.css\"></link>");
+		sb.append("<style>");
+		sb.append("body {margin:0; padding:0; background:#edf3fa; color:#1d2a36;}");
+		sb.append(".status-shell {padding:12px 14px 14px 14px;}");
+		sb.append(".status-header {display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px;}");
+		sb.append(".status-title {margin:0; font-size:34px; line-height:1.1; color:#1f5f94; letter-spacing:0.2px;}");
+		sb.append(".status-subtitle {margin:4px 0 0 0; font-size:13px; color:#48627a;}");
+		sb.append(".status-banner {margin:0; padding:7px 11px; border:1px solid #c6d4e3; border-radius:8px; background:#f6f9fc; font-size:14px; color:#2a465f;}");
+		sb.append(".status-pill {display:inline-block; margin-left:6px; padding:2px 9px; border-radius:999px; border:1px solid #8fb0cf; background:white; font-weight:700; text-transform:uppercase; font-size:12px; letter-spacing:0.3px;}");
+		sb.append(".status-content {padding:2px 0 0 0;}");
+		sb.append(".status-content table {box-shadow:0 1px 3px rgba(14,44,68,0.12);}");
+		sb.append(".status-content td {background-color:white;}");
+		sb.append("@media (max-width: 760px) {");
+		sb.append("  .status-shell {padding:10px;}");
+		sb.append("  .status-title {font-size:28px;}");
+		sb.append("  .status-subtitle {font-size:12px;}");
+		sb.append("  .status-banner {width:100%; box-sizing:border-box;}");
+		sb.append("}");
+		sb.append("</style>");
+		sb.append("</head><body>");
+		sb.append("<div class=\"status-shell\">");
+		sb.append("<div class=\"status-header\">");
+		sb.append("<div>");
+		sb.append("<h1 class=\"status-title\">Status</h1>");
+		sb.append("<p class=\"status-subtitle\">Live pipeline and stage runtime state</p>");
+		sb.append("</div>");
+		if (isAdmin) {
+			sb.append("<p class=\"status-banner\">Stage profiling <span class=\"status-pill\">");
+			sb.append(config.getEnableStageProfiling() ? "enabled" : "disabled");
+			sb.append("</span></p>");
+		}
+		sb.append("</div>");
+		sb.append("<div class=\"status-content\">");
+		Iterator<Pipeline> pit = config.getPipelines().iterator();
+		while (pit.hasNext()) sb.append(pit.next().getStatusHTML());
+		sb.append("</div>");
+		sb.append("</div>");
+		sb.append("</body></html>");
+		return sb.toString();
 	}
 
 }

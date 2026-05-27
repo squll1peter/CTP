@@ -83,7 +83,7 @@ public class PollingHttpImportService extends AbstractImportService {
 			File file;
 			while (!isInterrupted()) {
 				while ( !isInterrupted() && (file=getFile()) != null ) {
-					logger.debug("...enqueuing "+file);
+					if (logger.isDebugEnabled()) logger.debug("...enqueuing "+file);
 					if (!zip) fileReceived(file);
 					else unpackAndReceive(file);
 				}
@@ -103,15 +103,15 @@ public class PollingHttpImportService extends AbstractImportService {
 				conn.setRequestMethod("GET");
 				conn.connect();
 				int responseCode = conn.getResponseCode();
-				logger.debug("...received response code "+responseCode);
+				if (logger.isDebugEnabled()) logger.debug("...received response code "+responseCode);
 				if (responseCode == HttpURLConnection.HTTP_OK) {
 					long length = conn.getContentLengthLong();
-					logger.debug("...response content length = "+length);
+					if (logger.isDebugEnabled()) logger.debug("...response content length = "+length);
 					InputStream in = conn.getInputStream();
 					
 					String transferEncoding = conn.getHeaderField("Transfer-Encoding");
 					boolean isChunked = (transferEncoding != null) && transferEncoding.equals("chunked");
-					logger.debug("...transferEncoding: "+transferEncoding);
+					if (logger.isDebugEnabled()) logger.debug("...transferEncoding: "+transferEncoding);
 										
 					if (length <= 0) {
 						if (!isChunked) {
@@ -133,7 +133,7 @@ public class PollingHttpImportService extends AbstractImportService {
 							fos.write(b,0,len);
 							bytesRead += len;
 						}
-						logger.debug("...bytesRead = "+bytesRead);
+						if (logger.isDebugEnabled()) logger.debug("...bytesRead = "+bytesRead);
 					}
 					catch (Exception ex) {
 						logger.warn("Exception while receiving a file", ex);
@@ -149,10 +149,10 @@ public class PollingHttpImportService extends AbstractImportService {
 			}
 			catch (Exception ex) { logger.debug("...Exception while polling", ex); }
 			if ((file != null) && logger.isDebugEnabled()) {
-				logger.debug("...successfully received "+file);
-				logger.debug("...file length = "+file.length());
+				if (logger.isDebugEnabled()) logger.debug("...successfully received "+file);
+				if (logger.isDebugEnabled()) logger.debug("...file length = "+file.length());
 				FileObject fob = FileObject.getInstance(file);
-				logger.debug("...file parses as a "+fob.getType());
+				if (logger.isDebugEnabled()) logger.debug("...file parses as a "+fob.getType());
 			}
 			else if (file == null) logger.debug("...returning null file");
 			return file;
@@ -173,7 +173,7 @@ public class PollingHttpImportService extends AbstractImportService {
 						name = name.substring(name.lastIndexOf("/")+1).trim();
 						if (!name.equals("")) {
 							File outFile = File.createTempFile("FS-",".tmp",parent);
-							logger.debug("unpacking "+name+" to "+outFile);
+							if (logger.isDebugEnabled()) logger.debug("unpacking "+name+" to "+outFile);
 							BufferedOutputStream out =
 								new BufferedOutputStream(
 									new FileOutputStream(outFile));

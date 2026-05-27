@@ -27,7 +27,6 @@ import org.w3c.dom.Element;
 /**
  * An indexing stage for objects which have been processed, providing a web interface.
  */
-@SuppressWarnings("unchecked")
 public class ObjectTracker extends AbstractPipelineStage implements Processor {
 
 	static final Logger logger = Logger.getLogger(ObjectTracker.class);
@@ -128,7 +127,7 @@ public class ObjectTracker extends AbstractPipelineStage implements Processor {
 		value = value.trim();
 		if (key.equals("") || value.equals("")) return;
 		try {
-			HashSet<String> values = (HashSet<String>)index.get(key);
+			HashSet<String> values = toStringSet(index.get(key));
 			if (values == null) {
 				values = new HashSet<String>();
 			}
@@ -140,6 +139,22 @@ public class ObjectTracker extends AbstractPipelineStage implements Processor {
 			logger.debug("   key   = "+key);
 			logger.debug("   value = "+value);
 		}
+	}
+
+	private HashSet<String> toStringSet(Object value) {
+		if (value == null) return null;
+		if (!(value instanceof HashSet<?>)) {
+			throw new ClassCastException("Expected HashSet but found " + value.getClass().getName());
+		}
+		HashSet<?> rawSet = (HashSet<?>)value;
+		HashSet<String> stringSet = new HashSet<String>(rawSet.size());
+		for (Object item : rawSet) {
+			if (!(item instanceof String)) {
+				throw new ClassCastException("Expected String entry but found " + item.getClass().getName());
+			}
+			stringSet.add((String)item);
+		}
+		return stringSet;
 	}
 
 	//Load the index HTrees

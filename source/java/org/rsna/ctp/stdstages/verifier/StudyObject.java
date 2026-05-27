@@ -9,7 +9,7 @@ package org.rsna.ctp.stdstages.verifier;
 
 import java.io.Serializable;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import org.rsna.util.StringUtil;
 
 /**
@@ -23,14 +23,14 @@ public class StudyObject implements Serializable {
 	public String siUID;
 	public String ptID;
 	public String ptName;
-	public Hashtable<String,Dates> instances = null;
+	public ConcurrentHashMap<String,Dates> instances = null;
 
 	public StudyObject(String date, String siUID, String ptID, String ptName) {
 		this.date = date;
 		this.siUID = siUID;
 		this.ptID = ptID;
 		this.ptName = ptName;
-		this.instances = new Hashtable<String,Dates>();
+		this.instances = new ConcurrentHashMap<String,Dates>();
 	}
 
 	public Enumeration<String> getInstances() {

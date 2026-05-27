@@ -67,27 +67,27 @@ public class IntegerTable {
 		try {
 			text = text.trim();
 			type = type.trim();
-			logger.debug("getInteger: \""+type+"\", \""+text+"\", "+width);
+			if (logger.isDebugEnabled()) logger.debug("getInteger: \""+type+"\", \""+text+"\", "+width);
 			String key = type + "/" + text;
-			logger.debug("...searching for "+key);
+			if (logger.isDebugEnabled()) logger.debug("...searching for "+key);
 			Integer value = (Integer)index.get(key);
 			if (value == null) {
 				logger.debug("...got null");
 				String lastIntKey = "__" + type + "__";
-				logger.debug("...searching for "+lastIntKey);
+				if (logger.isDebugEnabled()) logger.debug("...searching for "+lastIntKey);
 				Integer lastInt = (Integer)index.get(lastIntKey);
-				logger.debug("...got "+lastInt);
+				if (logger.isDebugEnabled()) logger.debug("...got "+lastInt);
 				if (lastInt == null) lastInt = Integer.valueOf(0);
 				value = Integer.valueOf( lastInt.intValue() + 1 );
-				logger.debug("...storing "+value+" for "+lastIntKey);
+				if (logger.isDebugEnabled()) logger.debug("...storing "+value+" for "+lastIntKey);
 				index.put(lastIntKey, value);
-				logger.debug("...storing "+value+" for "+key);
+				if (logger.isDebugEnabled()) logger.debug("...storing "+value+" for "+key);
 				index.put(key, value);
 				logger.debug("...success");
 				recman.commit();
 			}
 			else {
-				logger.debug("...got "+value);
+				if (logger.isDebugEnabled()) logger.debug("...got "+value);
 				logger.debug("...success");
 			}
 			int intValue = value.intValue();

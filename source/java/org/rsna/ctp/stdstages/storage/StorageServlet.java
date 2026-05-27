@@ -12,7 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.zip.*;
 import org.apache.log4j.Level;
@@ -25,7 +25,6 @@ import org.rsna.server.HttpRequest;
 import org.rsna.server.HttpResponse;
 import org.rsna.server.Path;
 import org.rsna.server.User;
-import org.rsna.servlets.Servlet;
 import org.rsna.servlets.Servlet;
 import org.rsna.util.FileUtil;
 import org.rsna.util.StringUtil;
@@ -96,7 +95,7 @@ public class StorageServlet extends Servlet {
 		}
 		else {
 			//Zero or more than one FileSystem; list them.
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append("<html><head>");
 			sb.append("<title>Storage Service</title>");
 			sb.append("<link rel=\"stylesheet\" href=\"/BaseStyles.css\" type=\"text/css\"/>");
@@ -293,8 +292,8 @@ public class StorageServlet extends Servlet {
 			ZipOutputStream zout = new ZipOutputStream(fout);
 			
 			//Make tables to track entries
-			Hashtable<String,Integer> entryNames = new Hashtable<String,Integer>();
-			Hashtable<String,String> dcmEntryNames = new Hashtable<String,String>();
+			ConcurrentHashMap<String,Integer> entryNames = new ConcurrentHashMap<String,Integer>();
+			ConcurrentHashMap<String,String> dcmEntryNames = new ConcurrentHashMap<String,String>();
 
 			//Put in the files, skipping .db, .lg, and __index.xml files
 			File[] files = studyDir.listFiles();

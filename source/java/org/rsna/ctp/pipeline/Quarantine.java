@@ -9,7 +9,7 @@ package org.rsna.ctp.pipeline;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import jdbm.htree.HTree;
 import jdbm.helper.FastIterator;
@@ -33,7 +33,7 @@ public class Quarantine {
 
 	static final Logger logger = Logger.getLogger(Quarantine.class);
 
-	private static Hashtable<File,Quarantine> quarantines = new Hashtable<File,Quarantine>();
+	private static ConcurrentHashMap<File,Quarantine> quarantines = new ConcurrentHashMap<File,Quarantine>();
 	private static PurgeThread purgeThread = new PurgeThread();
 	private static long oneHour = 60 * 60 * 1000; //ms
 	private static long oneDay = 24 * oneHour; //ms
@@ -74,7 +74,7 @@ public class Quarantine {
 					quarantines.put(directory, q);
 				}
 			}
-			catch (Exception ex) { }
+			catch (Exception ex) { logger.warn("Unable to get/create Quarantine for: " + directory, ex); }
 		}
 		return q;
 	}
@@ -185,7 +185,7 @@ public class Quarantine {
 			versionTable.put(versionKey, versionID);
 			commitIndex();
 		}
-		catch (Exception ex) { }
+		catch (Exception ex) { logger.warn("Unable to build quarantine index", ex); }
 	}
 
 	//Delete the index.
@@ -310,7 +310,7 @@ public class Quarantine {
 					logger.info("Quarantine purge complete; " + totalCount + " file" + ((totalCount!=1)?"s":"") + " removed.");
 				}
 				try { Thread.sleep(oneDay); }
-				catch (Exception ex) { }
+				catch (Exception ignore) { Thread.currentThread().interrupt(); }
 			}
 		}
 	}
@@ -507,7 +507,7 @@ public class Quarantine {
 				studyList.add(study);
 			}
 		}
-		catch (Exception ex) { }
+		catch (Exception ex) { logger.warn("Error iterating quarantine studies", ex); }
 		QStudy[] studies = new QStudy[studyList.size()];
 		studies = studyList.toArray(studies);
 		Arrays.sort(studies);
@@ -541,7 +541,7 @@ public class Quarantine {
 				}
 			}
 		}
-		catch (Exception ex) { }
+		catch (Exception ex) { logger.warn("Error iterating quarantine series", ex); }
 		QSeries[] seriesArray = new QSeries[seriesList.size()];
 		seriesArray = seriesList.toArray(seriesArray);
 		Arrays.sort(seriesArray);
@@ -575,7 +575,7 @@ public class Quarantine {
 				}
 			}
 		}
-		catch (Exception ex) { }
+		catch (Exception ex) { logger.warn("Error iterating quarantine files", ex); }
 		QFile[] fileArray = new QFile[fileList.size()];
 		fileArray = fileList.toArray(fileArray);
 		Arrays.sort(fileArray);

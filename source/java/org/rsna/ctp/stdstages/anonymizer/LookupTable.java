@@ -11,7 +11,7 @@ import java.io.BufferedReader;
 import java.io.*;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +26,7 @@ public class LookupTable {
 
 	static final Logger logger = Logger.getLogger(LookupTable.class);
 
-	static Hashtable<String,LookupTable> tables = new Hashtable<String,LookupTable>();
+	static ConcurrentHashMap<String,LookupTable> tables = new ConcurrentHashMap<String,LookupTable>();
 
 	public File file;
 	public Properties properties = null;
@@ -194,7 +194,7 @@ public class LookupTable {
 			finally { FileUtil.close(bw); }
 		}
 		else {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			String[] names = new String[properties.size()];
 			names = properties.stringPropertyNames().toArray(names);
 			Arrays.sort(names);

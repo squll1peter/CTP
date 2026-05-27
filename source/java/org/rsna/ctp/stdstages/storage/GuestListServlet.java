@@ -104,8 +104,8 @@ public class GuestListServlet extends Servlet {
 			//the Xalan release as a class library with CTP, but that would triple the size
 			//of the download, so I decided to simply provide Strings instead.
 			String[] usernames = users.getUsernames();
-			StringBuffer allUsers = new StringBuffer();
-			StringBuffer guestUsers = new StringBuffer();
+			StringBuilder allUsers = new StringBuilder();
+			StringBuilder guestUsers = new StringBuilder();
 			for (int i=0; i<usernames.length; i++) {
 				User u = users.getUser(usernames[i]);
 				allUsers.append(u.getUsername() + ";");

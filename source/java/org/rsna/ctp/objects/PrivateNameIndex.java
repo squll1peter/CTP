@@ -7,17 +7,17 @@
 
 package org.rsna.ctp.objects;
 
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Encapsulate the index of private element names listed in an anonymizer script.
  */
 public class PrivateNameIndex {
 
-	Hashtable<String,Integer> index;
+	ConcurrentHashMap<String,Integer> index;
 	
 	public PrivateNameIndex() {
-		index = new Hashtable<String,Integer>();
+		index = new ConcurrentHashMap<String,Integer>();
 	}
 	
 	public void putTag(String name, int tag) {

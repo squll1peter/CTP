@@ -53,10 +53,10 @@ public class LookupTableCheckerServlet extends CTPServlet {
 	 * @param res The HttpServletResponse provided by the servlet container.
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			logger.warn(req.toString());
 			res.setResponseCode(res.forbidden);
 			res.send();
@@ -105,14 +105,14 @@ public class LookupTableCheckerServlet extends CTPServlet {
 	 * @param res The HttpResponse provided by the servlet container.
 	 */
 	public void doPost(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 		Configuration config = Configuration.getInstance();
 		PipelineStage stage = config.getRegisteredStage(context);
 		LookupTableChecker ltcStage = (LookupTableChecker)stage;
 		
 		//Make sure the user is authorized to do this.
-		userIsAuthorized = stage.getPipeline().allowsAdminBy(req.getUser());
-		if (!userIsAuthorized || !req.isReferredFrom(context)) {
+		boolean isAuthorized = authState.isAuthorized || stage.getPipeline().allowsAdminBy(req.getUser());
+		if (!isAuthorized || !req.isReferredFrom(context)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;

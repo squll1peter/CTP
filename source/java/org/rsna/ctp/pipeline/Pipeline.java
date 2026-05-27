@@ -43,7 +43,6 @@ public class Pipeline extends Thread {
 	 * specifying the stages in the pipeline.
 	 * @param index of the pipeline (used by stages to find their pipeline).
 	 */
-	@SuppressWarnings("unchecked")
 	public Pipeline(Element pipeline, int index) {
 		super();
 		pipelineIndex = index;
@@ -60,9 +59,9 @@ public class Pipeline extends Thread {
 				String className = childElement.getAttribute("class").trim();
 				if (!className.equals("")) {
 					try {
-						Class theClass = Class.forName(className);
-						Class[] signature = { Element.class };
-						Constructor constructor = theClass.getConstructor(signature);
+						Class<?> theClass = Class.forName(className);
+						Class<?>[] signature = { Element.class };
+						Constructor<?> constructor = theClass.getConstructor(signature);
 						Object[] args = { childElement };
 						PipelineStage stage = (PipelineStage)constructor.newInstance(args);
 						//Tell the stage its index
@@ -155,6 +154,7 @@ public class Pipeline extends Thread {
 	 */
 	public synchronized void shutdown() {
 		stop = true;
+		this.interrupt(); // wake the pipeline thread from sleep immediately
 	}
 
 	/**
@@ -212,6 +212,7 @@ public class Pipeline extends Thread {
 		File importedFile;
 		ImportService importService;
 		ImportedObject importedObject;
+		boolean profileStages = Configuration.getInstance().getEnableStageProfiling();
 
 		while (!interrupted() && !paused && ((importedObject=getNextObject()) != null)) {
 			//Get the object and where it came from.
@@ -239,12 +240,21 @@ public class Pipeline extends Thread {
 			//statement includes a test for (fileObject != null).
 			while ((fileObject != null) && sit.hasNext()) {
 				PipelineStage stage = sit.next();
-				if (stage instanceof Processor)
-					fileObject = ((Processor)stage).process(fileObject);
-				else if (stage instanceof StorageService)
-					fileObject = ((StorageService)stage).store(fileObject);
-				else if (stage instanceof ExportService)
-					((ExportService)stage).export(fileObject);
+				long stageStart = 0;
+				if (profileStages) stageStart = System.nanoTime();
+				try {
+					if (stage instanceof Processor)
+						fileObject = ((Processor)stage).process(fileObject);
+					else if (stage instanceof StorageService)
+						fileObject = ((StorageService)stage).store(fileObject);
+					else if (stage instanceof ExportService)
+						((ExportService)stage).export(fileObject);
+				}
+				finally {
+					if (profileStages && (stage instanceof AbstractPipelineStage)) {
+						((AbstractPipelineStage)stage).recordProcessTime(System.nanoTime() - stageStart);
+					}
+				}
 				//Note that ImportServices are skipped;
 				//they are only suppliers.
 			}
@@ -291,7 +301,7 @@ public class Pipeline extends Thread {
 	 * @return HTML text describing the configuration of the pipeline.
 	 */
 	public synchronized String getConfigHTML(User user) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h2>"+name+"</h2>");
 		Iterator<PipelineStage> sit = stages.iterator();
 		while (sit.hasNext()) sb.append(sit.next().getConfigHTML(user));
@@ -305,7 +315,7 @@ public class Pipeline extends Thread {
 	 * @return HTML text describing the status of the pipeline.
 	 */
 	public synchronized String getStatusHTML() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h2>"+name+"</h2>");
 		Iterator<PipelineStage> sit = stages.iterator();
 		while (sit.hasNext()) sb.append(sit.next().getStatusHTML());

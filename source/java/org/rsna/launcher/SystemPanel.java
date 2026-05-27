@@ -47,7 +47,7 @@ public class SystemPanel extends BasePanel {
 	private String displayProperties() {
 		String v;
 		String sep = System.getProperty("path.separator",";");
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		Properties p = System.getProperties();
 		String[] n = new String[p.size()];

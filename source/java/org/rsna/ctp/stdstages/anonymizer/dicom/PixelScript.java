@@ -86,7 +86,7 @@ public class PixelScript {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (Signature sig : signatures) {
 			sb.append(sig.script + "\n");
 			sb.append(sig.regions.toString() + "\n");

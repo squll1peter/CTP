@@ -19,7 +19,6 @@ import org.rsna.util.FileUtil;
 /**
  * An encapsulation of pixel regions.
  */
-@SuppressWarnings("unchecked")
 public class Regions {
 
 	static final Logger logger = Logger.getLogger(Regions.class);
@@ -45,7 +44,7 @@ public class Regions {
 	 * Get the regions as a String.
 	 */
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (Rectangle r : regions) {
 			sb.append("(" + r.x + "," + r.y + "," + (r.x + r.width) + "," + (r.y + r.height) + ")");
 		}
@@ -70,7 +69,7 @@ public class Regions {
 	 * @param columns the number of columns in the image
 	 */
 	public Vector<Shape> getRegionsVector(int rows, int columns) {
-		return new Vector( getAdjustedRegions(rows, columns) );
+		return new Vector<Shape>(getAdjustedRegions(rows, columns));
 	}
 
 	/**

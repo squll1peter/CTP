@@ -31,7 +31,6 @@ import org.w3c.dom.Element;
 /**
  * A pipeline stage for exporting differences in DicomObjects to external databases.
  */
-@SuppressWarnings("unchecked")
 public class DicomDifferenceLogger extends AbstractPipelineStage implements ExportService {
 
 	static final Logger logger = Logger.getLogger(DicomDifferenceLogger.class);
@@ -98,8 +97,8 @@ public class DicomDifferenceLogger extends AbstractPipelineStage implements Expo
 	
 	private LogAdapter getLogAdapter(String adapterClassName) {
 		try {
-			Class adapterClass = Class.forName(adapterClassName);
-			Class[] signature = { Element.class };
+			Class<?> adapterClass = Class.forName(adapterClassName);
+			Class<?>[] signature = { Element.class };
 			Object[] args = { element };
 			return (LogAdapter)adapterClass.getConstructor(signature).newInstance(args);
 		}
@@ -279,7 +278,7 @@ public class DicomDifferenceLogger extends AbstractPipelineStage implements Expo
 	 * @return HTML text displaying the active status of the stage.
 	 */
 	public synchronized String getStatusHTML(String childUniqueStatus) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<tr><td width=\"20%\">Export queue size:</td>");
 		sb.append("<td>" + ((queueManager!=null) ? queueManager.size() : "???") + "</td></tr>");
 		sb.append(

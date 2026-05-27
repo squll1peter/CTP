@@ -9,7 +9,7 @@ package org.rsna.ctp.stdstages.storage;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,10 +23,10 @@ public class FileSystemManager {
 
 	static final Logger logger = Logger.getLogger(FileSystemManager.class);
 
-	static Hashtable<File,FileSystemManager> fileSystemManagers
-								= new Hashtable<File,FileSystemManager>();
+	static ConcurrentHashMap<File,FileSystemManager> fileSystemManagers
+								= new ConcurrentHashMap<File,FileSystemManager>();
 
-	Hashtable<String,FileSystem> fileSystems = null;
+	ConcurrentHashMap<String,FileSystem> fileSystems = null;
 	File root;
 	String type;
 	boolean requireAuthentication;
@@ -126,7 +126,7 @@ public class FileSystemManager {
 		this.setWritable = setWritable;
 		this.qualifiers = qualifiers;
 		this.exportDirectory = exportDirectory;
-		fileSystems = new Hashtable<String,FileSystem>();
+		fileSystems = new ConcurrentHashMap<String,FileSystem>();
 		if (setReadable) root.setReadable(true,false); //Java 1.6
 		if (setWritable) root.setWritable(true,false); //Java 1.6
 	}

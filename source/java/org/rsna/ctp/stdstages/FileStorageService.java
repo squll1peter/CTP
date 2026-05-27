@@ -9,7 +9,7 @@ package org.rsna.ctp.stdstages;
 
 import java.io.File;
 import java.util.Calendar;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import org.apache.log4j.Logger;
@@ -298,7 +298,7 @@ public class FileStorageService extends AbstractPipelineStage implements Storage
 	 * @return HTML text displaying the current status of the stage.
 	 */
 	public synchronized String getStatusHTML() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<h3>"+name+"</h3>");
 		sb.append("<table border=\"1\" width=\"100%\">");
 		sb.append("<tr><td width=\"20%\">Last file stored:</td>");

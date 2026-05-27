@@ -15,8 +15,8 @@ import javax.swing.*;
  */
 public class BasePanel extends JPanel implements Scrollable{
 
-	static Color bgColor = new Color(0xb9d0ed);
-	static Color titleColor = new Color(0x2977b9);
+	static Color bgColor = new Color(0xe4eef9);
+	static Color titleColor = new Color(0x1f5f94);
 	private boolean trackWidth = true;
 
 	public BasePanel() {

@@ -189,7 +189,7 @@ public class AuditLogServlet extends Servlet {
 	}
 	
 	private String getCSV(Document doc) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Element root = doc.getDocumentElement();
 		NodeList nl = root.getElementsByTagName("DicomObject");
 		if (nl.getLength() > 0) {

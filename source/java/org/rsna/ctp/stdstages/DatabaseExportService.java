@@ -39,7 +39,6 @@ import org.w3c.dom.Element;
 /**
  * The Thread that exports FileObjects to a database.
  */
-@SuppressWarnings("unchecked")
 public class DatabaseExportService extends AbstractQueuedExportService {
 
 	static final Logger logger = Logger.getLogger(DatabaseExportService.class);
@@ -82,7 +81,7 @@ public class DatabaseExportService extends AbstractQueuedExportService {
 			if (port != 0) startVerifierService(ssl, port, requireAuthentication);
 
 		}
-		else {
+			else { 
 			logger.error(name+": Missing root directory attribute.");
 			throw new Exception(name+": Missing root directory attribute.");
 		}
@@ -93,6 +92,11 @@ public class DatabaseExportService extends AbstractQueuedExportService {
 	 */
 	public synchronized void shutdown() {
 		if (verifierService != null) verifierService.stopServer();
+		if (exporters != null) {
+			for (int i=0; i<exporters.length; i++) {
+				if (exporters[i] != null) exporters[i].interrupt();
+			}
+		}
 		super.shutdown();
 	}
 
@@ -104,13 +108,13 @@ public class DatabaseExportService extends AbstractQueuedExportService {
 		for (int i=0; i<poolSize; i++) {
 			DatabaseAdapter dba = null;
 			try {
-				Class adapterClass = Class.forName(adapterClassName);
+				Class<?> adapterClass = Class.forName(adapterClassName);
 				try {
-					Class[] signature = { Element.class };
+					Class<?>[] signature = { Element.class };
 					Object[] args = { element };
 					dba = (DatabaseAdapter)adapterClass.getConstructor(signature).newInstance(args);
 				}
-				catch (Exception unableWithElement) {
+				catch (Exception unableWithElement) { 
 					try { dba = (DatabaseAdapter)adapterClass.getDeclaredConstructor().newInstance(); }
 					catch (Exception unableWithEmptyContstructor) {
 						logger.error(name+": Unable to load the Database class: " + adapterClassName);
@@ -309,10 +313,10 @@ public class DatabaseExportService extends AbstractQueuedExportService {
 
 				DatabaseAdapter dba;
 				try {
-					Class adapterClass = Class.forName(adapterClassName);
+					Class<?> adapterClass = Class.forName(adapterClassName);
 					dba = (DatabaseAdapter)adapterClass.getDeclaredConstructor().newInstance();
 					if (dba.connect().equals(Status.OK)) {
-						StringBuffer sb = new StringBuffer();
+						StringBuilder sb = new StringBuilder();
 						sb.append("<result>\n");
 						Map<String, UIDResult> resultMap = dba.uidQuery(set);
 						if (resultMap != null) {

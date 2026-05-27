@@ -9,7 +9,7 @@ package org.rsna.ctp.stdstages.anonymizer.xml;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Properties;
 import org.rsna.ctp.stdstages.anonymizer.AnonymizerFunctions;
 import org.rsna.util.XmlUtil;
@@ -27,7 +27,7 @@ class XmlScript {
 	public String script = null;
 	public boolean hasMore = true;
 	Document document = null;
-	Hashtable<String,String> table = null;
+	ConcurrentHashMap<String,String> table = null;
 	Properties lookup = null;
 	int k = 0; //the current parsing position.
 
@@ -38,7 +38,7 @@ class XmlScript {
 	 * @param script the text of the script command.
 	 */
 	public XmlScript(Document document,
-					 Hashtable<String,String> table,
+					 ConcurrentHashMap<String,String> table,
 					 String script,
 					 Properties lookup) {
 		this.document = document;

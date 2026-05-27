@@ -12,7 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.security.SecureRandom;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -307,7 +307,7 @@ public class HttpExportService extends AbstractExportService {
 	}
 	
 	private void logConnection(HttpURLConnection conn) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name+": Connection parameters:\n");
 		sb.append("Request method: "+conn.getRequestMethod()+"\n");
 		sb.append("URL: "+conn.getURL()+"\n");
@@ -327,7 +327,7 @@ public class HttpExportService extends AbstractExportService {
 	 * @return HTML text displaying the active status of the stage.
 	 */
 	public synchronized String getStatusHTML() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (cacheSize > 0) {
 			sb.append("<tr><td width=\"20%\">Cache queue size:</td>");
 			sb.append("<td>" + ((cacheManager!=null) ? cacheManager.size() : "???") + "</td></tr>");
@@ -384,7 +384,7 @@ public class HttpExportService extends AbstractExportService {
 					catch (Exception notDICOM) { }
 				}
 				if (nFiles > 0) {
-					logger.debug("Compressing "+nFiles+" files for transmission.");
+					if (logger.isDebugEnabled()) logger.debug("Compressing "+nFiles+" files for transmission.");
 					if (FileUtil.zipDirectory(cacheTemp, zip, true)) {
 						getQueueManager().enqueue(zip);
 						zip.delete();
@@ -393,7 +393,7 @@ public class HttpExportService extends AbstractExportService {
 				}
 				if (cacheManager.size() <= 0) {
 					try { Thread.sleep(getInterval()); }
-					catch (Exception ex) { }
+                                catch (Exception ignore) { Thread.currentThread().interrupt(); }
 				}
 			}
 		}
@@ -403,7 +403,7 @@ public class HttpExportService extends AbstractExportService {
 				Pattern pattern = Pattern.compile( singleTag + "(::"+singleTag+")*" );
 
 				Matcher matcher = pattern.matcher(string);
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				while (matcher.find()) {
 					String group = matcher.group();
 					String repl = getElementValue(dob, group);
@@ -445,9 +445,9 @@ public class HttpExportService extends AbstractExportService {
 		}
 		
 		class NameTable {
-			Hashtable<String,Integer> names;
+			ConcurrentHashMap<String,Integer> names;
 			public NameTable() {
-				names = new Hashtable<String,Integer>();
+				names = new ConcurrentHashMap<String,Integer>();
 			}
 			private String getDuplicateName(File dir, String name, String ext) {
 				boolean hasExtension = name.toLowerCase().endsWith(ext.toLowerCase());
@@ -526,7 +526,7 @@ public class HttpExportService extends AbstractExportService {
 					response = FileUtil.getTextOrException( conn.getInputStream(), FileUtil.utf8, false ).trim();
 				}
 				conn.disconnect();
-				logger.debug("XNAT Session response: "+response);
+				if (logger.isDebugEnabled()) logger.debug("XNAT Session response: "+response);
 				if ((response != null) && !response.contains("<")) return response;
 			}
 			catch (Exception unable) { 

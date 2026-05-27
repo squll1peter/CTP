@@ -9,7 +9,7 @@ package org.rsna.ctp.stdstages;
 
 import java.io.File;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,7 +33,7 @@ public class EmailService extends AbstractPipelineStage implements Processor, Sc
 	static final Logger logger = Logger.getLogger(EmailService.class);
 
 	File dicomScriptFile = null;
-	Hashtable<String,Study> studies;
+	ConcurrentHashMap<String,Study> studies;
 	String smtpServer;
 	String smtpPort;
 	String username;
@@ -69,7 +69,7 @@ public class EmailService extends AbstractPipelineStage implements Processor, Sc
 		super(element);
 
 		dicomScriptFile = getFilterScriptFile(element.getAttribute("dicomScript"));
-		studies = new Hashtable<String,Study>();
+		studies = new ConcurrentHashMap<String,Study>();
 		includeInstitutionName = element.getAttribute("includeInstitutionName").toLowerCase().trim().equals("yes");
 		includePatientName = element.getAttribute("includePatientName").toLowerCase().trim().equals("yes");
 		includePatientID = element.getAttribute("includePatientID").toLowerCase().trim().equals("yes");
@@ -232,7 +232,8 @@ public class EmailService extends AbstractPipelineStage implements Processor, Sc
 						processCompletedStudies();
 						sleep(interval);
 					}
-					catch (Exception ex) { }
+					catch (InterruptedException ie) { Thread.currentThread().interrupt(); }
+					catch (Exception ex) { logger.warn("Error in email service loop", ex); }
 				}
 			}
 		}
@@ -271,7 +272,7 @@ public class EmailService extends AbstractPipelineStage implements Processor, Sc
 			return study.studySubject;
 		}
 		private String getPlainText(Study study) {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append("A study was received and processed by CTP.\n");
 			if (includeInstitutionName)	sb.append("Institution Name: "+study.institutionName+"\n");
 			if (includePatientName) 	sb.append("Patient Name:     "+study.patientName+"\n");
@@ -285,7 +286,7 @@ public class EmailService extends AbstractPipelineStage implements Processor, Sc
 			return sb.toString();
 		}
 		private String getHtmlText(Study study) {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append("<html><head><title>Study Received</title></head><body>\n");
 			sb.append("<h2>A study was received and processed by CTP.</h2>\n");
 			sb.append("<table>\n");
@@ -350,7 +351,7 @@ public class EmailService extends AbstractPipelineStage implements Processor, Sc
 			Pattern pattern = Pattern.compile( singleTag + "(::"+singleTag+")*" );
 
 			Matcher matcher = pattern.matcher(string);
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			while (matcher.find()) {
 				String group = matcher.group();
 				String repl = getElementValue(dob, group);

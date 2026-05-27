@@ -10,7 +10,6 @@ package org.rsna.ctp.servlets;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.LinkedList;
 import org.apache.log4j.Logger;
 import org.rsna.ctp.Configuration;
 import org.rsna.ctp.plugin.Plugin;
@@ -48,10 +47,19 @@ public class CTPServlet extends Servlet {
 	int s = -1;
 	Pipeline pipeline = null;
 	PipelineStage stage = null;
-	boolean userIsAdmin = false;
-	boolean userIsStageAdmin = false;
-	boolean userIsAuthorized = false;
 	Configuration config = null;
+
+	public static class AuthState {
+		public final boolean isAdmin;
+		public final boolean isStageAdmin;
+		public final boolean isAuthorized;
+
+		public AuthState(boolean isAdmin, boolean isStageAdmin) {
+			this.isAdmin = isAdmin;
+			this.isStageAdmin = isStageAdmin;
+			this.isAuthorized = isAdmin || isStageAdmin;
+		}
+	}
 
 	/**
 	 * Construct a CTPServlet.
@@ -62,7 +70,7 @@ public class CTPServlet extends Servlet {
 		super(root, context);
 	}
 
-	public void loadParameters(HttpRequest req) {
+	public AuthState loadParameters(HttpRequest req) {
 		config = Configuration.getInstance();
 		user = req.getUser();
 		protocol = req.getProtocol();
@@ -90,10 +98,10 @@ public class CTPServlet extends Servlet {
 			}
 			else logger.warn("Unable to load pipeline and stage for ("+p+","+s+")");
 		}
-		
-		userIsAdmin = req.userHasRole("admin");
-		userIsStageAdmin = (stage != null) && stage.allowsAdminBy(user);
-		userIsAuthorized = userIsAdmin || userIsStageAdmin;
+
+		boolean isAdmin = req.userHasRole("admin");
+		boolean isStageAdmin = (stage != null) && stage.allowsAdminBy(user);
+		return new AuthState(isAdmin, isStageAdmin);
 	}
 
 }

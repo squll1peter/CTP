@@ -68,10 +68,10 @@ public class LookupServlet extends CTPServlet {
 	 * @param res The HttpServletResponse provided by the servlet container.
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -113,12 +113,12 @@ public class LookupServlet extends CTPServlet {
 	 * @param res The HttpServletResponse provided by the servlet container.
 	 */
 	public void doPut(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 		res.disableCaching();
 		res.setContentType("txt");
 		
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -168,10 +168,10 @@ public class LookupServlet extends CTPServlet {
 	 * @param res The HttpResponse provided by the servlet container.
 	 */
 	public void doPost(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized || !req.isReferredFrom(context)) {
+		if (!authState.isAuthorized || !req.isReferredFrom(context)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -357,7 +357,7 @@ public class LookupServlet extends CTPServlet {
 
 	//Convert the lookup table properties file text to a CSV string.
 	private String getCSV(File file) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader( new InputStreamReader(new FileInputStream(file), "UTF-8") );
@@ -382,7 +382,7 @@ public class LookupServlet extends CTPServlet {
 	private String getProps(File csvFile, String defaultKeyType) {
 		boolean hasDefaultKeyType = (defaultKeyType != null);
 		if (hasDefaultKeyType) defaultKeyType = defaultKeyType.trim() + "/";
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		BufferedReader br = null;
 		try {
 			br = new BufferedReader( new InputStreamReader(new FileInputStream(csvFile), "UTF-8") );

@@ -39,6 +39,8 @@ public class Launcher extends JFrame implements ChangeListener {
 
 	public static void main(String args[]) {
 		if (args.length > 0) autostart = args[0].trim().toLowerCase().equals("start");
+		try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
+		catch (Exception ignore) { }
 		new Launcher();
 	}
 
@@ -52,7 +54,13 @@ public class Launcher extends JFrame implements ChangeListener {
 
 		//Set the SSL params
 		System.setProperty("javax.net.ssl.keyStore", "keystore");
-		System.setProperty("javax.net.ssl.keyStorePassword", "ctpstore");
+		String keystorePassword = System.getenv("CTP_KEYSTORE_PASSWORD");
+		if (keystorePassword == null || keystorePassword.isEmpty()) {
+			System.err.println("WARNING: CTP_KEYSTORE_PASSWORD environment variable is not set; " +
+				"falling back to default keystore password.");
+			keystorePassword = "ctpstore";
+		}
+		System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
 
 		try {
 			config = Configuration.load();

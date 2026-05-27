@@ -37,7 +37,6 @@ import org.w3c.dom.NodeList;
 /**
  * A Servlet that provides web access to the indexed data stored by an ObjectTracker pipeline stage.
  */
-@SuppressWarnings("unchecked")
 public class ObjectTrackerServlet extends CTPServlet {
 
 	static final Logger logger = Logger.getLogger(ObjectTrackerServlet.class);
@@ -58,10 +57,10 @@ public class ObjectTrackerServlet extends CTPServlet {
 	 * @param res the response object
 	 */
 	public void doGet(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized) {
+		if (!authState.isAuthorized) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -92,10 +91,10 @@ public class ObjectTrackerServlet extends CTPServlet {
 	 * @param res The HttpResponse provided by the servlet container.
 	 */
 	public void doPost(HttpRequest req, HttpResponse res) {
-		super.loadParameters(req);
+		CTPServlet.AuthState authState = super.loadParameters(req);
 
 		//Make sure the user is authorized to do this.
-		if (!userIsAuthorized || !req.isReferredFrom(context)) {
+		if (!authState.isAuthorized || !req.isReferredFrom(context)) {
 			res.setResponseCode(res.forbidden);
 			res.send();
 			return;
@@ -167,7 +166,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 	}
 
 	private String makeList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Configuration config = Configuration.getInstance();
 		List<Pipeline> pipelines = config.getPipelines();
 		if (pipelines.size() != 0) {
@@ -201,7 +200,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 	}
 
 	private String makeForm(ObjectTracker tracker, int p, int s) {
-		StringBuffer form = new StringBuffer();
+		StringBuilder form = new StringBuilder();
 		form.append("<form method=\"POST\" accept-charset=\"UTF-8\" action=\"/"+context+"\">\n");
 		form.append(hidden("p",Integer.toString(p)));
 		form.append(hidden("s",Integer.toString(s)));
@@ -286,7 +285,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 	}
 
 	private String getCSV(Document data) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Element root = data.getDocumentElement();
 
 		//Set the titles.
@@ -306,7 +305,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 	}
 
 	private String getHTML(Document data) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Element root = data.getDocumentElement();
 
 		sb.append("<table border=\"1\">\n");
@@ -330,7 +329,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 		return sb.toString();
 	}
 
-	private void insertDates(StringBuffer sb, Element parent, boolean html) {
+	private void insertDates(StringBuilder sb, Element parent, boolean html) {
 		Node child = parent.getFirstChild();
 		while (child != null) {
 			if ((child.getNodeType() == Node.ELEMENT_NODE) && child.getNodeName().equals("Date")) {
@@ -340,7 +339,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 		}
 	}
 
-	private void insertPatients(StringBuffer sb, Element parent, boolean html) {
+	private void insertPatients(StringBuilder sb, Element parent, boolean html) {
 		Node child = parent.getFirstChild();
 		while (child != null) {
 			if ((child.getNodeType() == Node.ELEMENT_NODE) && child.getNodeName().equals("Patient")) {
@@ -350,7 +349,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 		}
 	}
 
-	private void insertStudies(StringBuffer sb, Element parent, boolean html) {
+	private void insertStudies(StringBuilder sb, Element parent, boolean html) {
 		Node child = parent.getFirstChild();
 		while (child != null) {
 			if ((child.getNodeType() == Node.ELEMENT_NODE) && child.getNodeName().equals("Study")) {
@@ -360,7 +359,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 		}
 	}
 
-	private void insertSeries(StringBuffer sb, Element parent, boolean html) {
+	private void insertSeries(StringBuilder sb, Element parent, boolean html) {
 		Node child = parent.getFirstChild();
 		while (child != null) {
 			if ((child.getNodeType() == Node.ELEMENT_NODE) && child.getNodeName().equals("Series")) {
@@ -370,7 +369,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 		}
 	}
 
-	private void insertRow(StringBuffer sb, Element seriesElement, boolean html) {
+	private void insertRow(StringBuilder sb, Element seriesElement, boolean html) {
 		String seriesUID = seriesElement.getAttribute("uid");
 		String size = seriesElement.getAttribute("size");
 		Element studyElement = (Element)seriesElement.getParentNode();
@@ -432,7 +431,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 				Element dateElement = parent.getOwnerDocument().createElement("Date");
 				dateElement.setAttribute("date", keys[i]);
 				parent.appendChild(dateElement);
-				HashSet<String> patientSet = (HashSet<String>)index.get(keys[i]);
+				HashSet<String> patientSet = toStringSet(index.get(keys[i]));
 				if (patientSet != null) {
 					String[] patients = new String[patientSet.size()];
 					patients = patientSet.toArray(patients);
@@ -461,7 +460,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 				Element patientElement = parent.getOwnerDocument().createElement("Patient");
 				patientElement.setAttribute("id", keys[i]);
 				parent.appendChild(patientElement);
-				HashSet<String> studySet = (HashSet<String>)index.get(keys[i]);
+				HashSet<String> studySet = toStringSet(index.get(keys[i]));
 				if (studySet != null) {
 					String[] studies = new String[studySet.size()];
 					studies = studySet.toArray(studies);
@@ -485,7 +484,7 @@ public class ObjectTrackerServlet extends CTPServlet {
 				Element studyElement = parent.getOwnerDocument().createElement("Study");
 				studyElement.setAttribute("uid", keys[i]);
 				parent.appendChild(studyElement);
-				HashSet<String> seriesSet = (HashSet<String>)index.get(keys[i]);
+				HashSet<String> seriesSet = toStringSet(index.get(keys[i]));
 				if (seriesSet != null) {
 					String[] series = new String[seriesSet.size()];
 					series = seriesSet.toArray(series);
@@ -507,13 +506,24 @@ public class ObjectTrackerServlet extends CTPServlet {
 				parent.appendChild(parent.getOwnerDocument().createTextNode(margin));
 				Element seriesElement = parent.getOwnerDocument().createElement("Series");
 				seriesElement.setAttribute("uid", keys[i]);
-				HashSet<String> sopSet = (HashSet<String>)index.get(keys[i]);
+				HashSet<String> sopSet = toStringSet(index.get(keys[i]));
 				int size = (sopSet != null) ? sopSet.size() : 0;
 				seriesElement.setAttribute("size", ""+size);
 				parent.appendChild(seriesElement);
 			}
 		}
 		catch (Exception ignore) { logger.debug(ignore); }
+	}
+
+	private HashSet<String> toStringSet(Object value) {
+		if (!(value instanceof HashSet<?>)) return null;
+		HashSet<?> rawSet = (HashSet<?>)value;
+		HashSet<String> stringSet = new HashSet<String>(rawSet.size());
+		for (Object item : rawSet) {
+			if (!(item instanceof String)) return null;
+			stringSet.add((String)item);
+		}
+		return stringSet;
 	}
 
 }

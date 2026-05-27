@@ -16,7 +16,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -219,7 +219,7 @@ public class DicomStorageSCU {
 	 * @return the status result from the transmission
 	 */
 	public synchronized Status send(DicomObject dicomObject) {
-		logger.debug("Exporting "+dicomObject.getFile().getName()+" to "+url.toString());
+		if (logger.isDebugEnabled()) logger.debug("Exporting "+dicomObject.getFile().getName()+" to "+url.toString());
 		DcmParser parser = dicomObject.getDcmParser();
 		Dataset ds = dicomObject.getDataset();
 
@@ -242,25 +242,25 @@ public class DicomStorageSCU {
 
 			//See if we have to make a new association for this request.
 			if (logger.isDebugEnabled()) {
-				logger.debug("active is "+((active!=null)?"not ":"")+"null");
+				if (logger.isDebugEnabled()) logger.debug("active is "+((active!=null)?"not ":"")+"null");
 				if (active != null) {
 					boolean x = (active.getAssociation().getState() != Association.ASSOCIATION_ESTABLISHED);
-					logger.debug("active is "+(x?"not ":"")+"established");
+					if (logger.isDebugEnabled()) logger.debug("active is "+(x?"not ":"")+"established");
 				}
-				logger.debug("currentTSUID is "+((currentTSUID!=null)?"not ":"")+"null");
+				if (logger.isDebugEnabled()) logger.debug("currentTSUID is "+((currentTSUID!=null)?"not ":"")+"null");
 				if (currentTSUID != null) {
 					boolean x = !tsUID.equals(currentTSUID);
-					logger.debug("tsUID "+(x?"!":"")+"= currentTSUID");
+					if (logger.isDebugEnabled()) logger.debug("tsUID "+(x?"!":"")+"= currentTSUID");
 				}
-				logger.debug("currentSOPClassUID is "+((currentSOPClassUID!=null)?"not ":"")+"null");
+				if (logger.isDebugEnabled()) logger.debug("currentSOPClassUID is "+((currentSOPClassUID!=null)?"not ":"")+"null");
 				if (currentSOPClassUID != null) {
 					boolean x = !currentSOPClassUID.equals(currentTSUID);
-					logger.debug("currentSOPClassUID "+(x?"!":"")+"= currentSOPClassUID");
+					if (logger.isDebugEnabled()) logger.debug("currentSOPClassUID "+(x?"!":"")+"= currentSOPClassUID");
 				}
-				logger.debug("currentHost "+((!requestedHost.equals(currentHost))?"!":"")+"= requestedHost");
-				logger.debug("currentPort "+((currentPort!=requestedPort)?"!":"")+"= requestedPort");
-				logger.debug("currentCalledAET "+((!requestedCalledAET.equals(currentCalledAET))?"!":"")+"= requestedCalledAET");
-				logger.debug("currentCallingAET "+((!requestedCallingAET.equals(currentCallingAET))?"!":"")+"= requestedCallingAET");
+				if (logger.isDebugEnabled()) logger.debug("currentHost "+((!requestedHost.equals(currentHost))?"!":"")+"= requestedHost");
+				if (logger.isDebugEnabled()) logger.debug("currentPort "+((currentPort!=requestedPort)?"!":"")+"= requestedPort");
+				if (logger.isDebugEnabled()) logger.debug("currentCalledAET "+((!requestedCalledAET.equals(currentCalledAET))?"!":"")+"= requestedCalledAET");
+				if (logger.isDebugEnabled()) logger.debug("currentCallingAET "+((!requestedCallingAET.equals(currentCallingAET))?"!":"")+"= requestedCallingAET");
 			}
 			if (
 				//if the active association does not exist or if it has been closed by the other end, then YES
@@ -314,12 +314,12 @@ public class DicomStorageSCU {
 				if (pc == null) {
 					currentTSUID = null;
 					currentSOPClassUID = null;
-					logger.debug("...unable to negotiate a transfer syntax for "+dicomObject.getSOPInstanceUID());
-					logger.debug("......SOPClass: "+dicomObject.getSOPClassName());
+					if (logger.isDebugEnabled()) logger.debug("...unable to negotiate a transfer syntax for "+dicomObject.getSOPInstanceUID());
+					if (logger.isDebugEnabled()) logger.debug("......SOPClass: "+dicomObject.getSOPClassName());
 					return Status.FAIL;
 				}
-				logger.debug("...successfully negotiated transfer syntax for "+dicomObject.getSOPInstanceUID());
-				logger.debug("......SOPClass: "+dicomObject.getSOPClassName());
+				if (logger.isDebugEnabled()) logger.debug("...successfully negotiated transfer syntax for "+dicomObject.getSOPInstanceUID());
+				if (logger.isDebugEnabled()) logger.debug("......SOPClass: "+dicomObject.getSOPClassName());
 				currentTSUID = pc.getTransferSyntaxUID();
 				currentSOPClassUID = sopClassUID;
 				currentHost = requestedHost;
@@ -343,7 +343,7 @@ public class DicomStorageSCU {
 				return Status.OK;
 			}
 			else { 
-				logger.debug("...transmission failed ("+status+"); returning Status.FAIL");
+				if (logger.isDebugEnabled()) logger.debug("...transmission failed ("+status+"); returning Status.FAIL");
 				close(); 
 				return Status.FAIL; 
 			}

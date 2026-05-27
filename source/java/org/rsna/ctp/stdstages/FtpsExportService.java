@@ -92,11 +92,12 @@ public class FtpsExportService extends AbstractExportService {
 			String remoteDirPath = remotePath.substring(0, k);
 			String remoteFilename = remotePath.substring(k+1);
 			
-			logger.debug("Remote path: "+remotePath);
-			logger.debug("Remote dirPath: "+remoteDirPath);
-			logger.debug("Remote filename: "+remoteFilename);
+			if (logger.isDebugEnabled()) logger.debug("Remote path: "+remotePath);
+			if (logger.isDebugEnabled()) logger.debug("Remote dirPath: "+remoteDirPath);
+			if (logger.isDebugEnabled()) logger.debug("Remote filename: "+remoteFilename);
 
-			FTPSClient client = new FTPSClient( /*isImplicit=*/false );
+			FTPSClient client = new FTPSClient( "TLS", /*isImplicit=*/false );
+			client.setEnabledProtocols(new String[]{"TLSv1.2", "TLSv1.3"});
 			
 			// Connect to the host
 			client.connect(host, port);
@@ -152,7 +153,7 @@ public class FtpsExportService extends AbstractExportService {
 			try {
 				Pattern pattern = Pattern.compile("\\$\\{\\w+\\}");
 				Matcher matcher = pattern.matcher(string);
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				while (matcher.find()) {
 					String group = matcher.group();
 					String dicomKeyword = group.substring(2, group.length()-1).trim();
@@ -172,9 +173,9 @@ public class FtpsExportService extends AbstractExportService {
 		try {
 			if (!dirPath.startsWith("/")) dirPath = "/" + dirPath;
 			String wd = client.printWorkingDirectory();
-			logger.debug("Current FTP host working directory: "+wd);
+			if (logger.isDebugEnabled()) logger.debug("Current FTP host working directory: "+wd);
 			if (wd.equals(dirPath)) return true;
-			logger.debug("...attempting change to: "+dirPath);
+			if (logger.isDebugEnabled()) logger.debug("...attempting change to: "+dirPath);
 			
 			boolean ok = client.changeWorkingDirectory("/");
 			if (ok) {
@@ -187,7 +188,7 @@ public class FtpsExportService extends AbstractExportService {
 			String[] pathElements = dirPath.split("/");
 			for (String pathElement : pathElements) {
 				if (!pathElement.equals("")) {
-					logger.debug("......attempting change to: "+pathElement);
+					if (logger.isDebugEnabled()) logger.debug("......attempting change to: "+pathElement);
 					if (client.changeWorkingDirectory(pathElement)) {
 						logger.debug(".........success");
 					}

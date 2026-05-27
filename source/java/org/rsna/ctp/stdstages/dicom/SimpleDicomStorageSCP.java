@@ -141,7 +141,7 @@ public class SimpleDicomStorageSCP extends DcmServiceBase {
 			storeToDir(in, fmi, name, callingAET);
 			logger.debug("doCStore completed - "+currentUID);
         }
-        catch (IOException ioe) { ioe.printStackTrace(); }
+        catch (IOException ioe) { logger.error("doCStore exception: "+ioe.getMessage(), ioe); }
         finally { FileUtil.close(in); }
         rspCmd.putUS(Tags.Status, Status.Success);
     }

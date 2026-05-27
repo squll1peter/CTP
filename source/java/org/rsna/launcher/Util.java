@@ -65,7 +65,7 @@ public class Util {
 			conn.setRequestProperty("servicemanager","shutdown");
 			conn.connect();
 
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			BufferedReader br = new BufferedReader( new InputStreamReader(conn.getInputStream(), "UTF-8") );
 			int n; char[] cbuf = new char[1024];
 			while ((n=br.read(cbuf, 0, cbuf.length)) != -1) sb.append(cbuf,0,n);
@@ -89,7 +89,7 @@ public class Util {
 			conn.setConnectTimeout(500);
 			conn.connect();
 			int length = conn.getContentLength();
-			StringBuffer text = new StringBuffer();
+			StringBuilder text = new StringBuilder();
 			InputStream is = conn.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 			int size = 256; char[] buf = new char[size]; int len;

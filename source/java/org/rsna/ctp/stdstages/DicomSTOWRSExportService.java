@@ -12,7 +12,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.security.SecureRandom;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -227,7 +227,7 @@ public class DicomSTOWRSExportService extends AbstractExportService {
 	}
 	
 	private void logConnection(HttpURLConnection conn) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(name+": Connection parameters:\n");
 		sb.append("Request method: "+conn.getRequestMethod()+"\n");
 		sb.append("URL: "+conn.getURL()+"\n");
