@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple REST receiver for CTP StableNotificationPlugin testing.
+"""Simple REST receiver for CTP StabilityWebhookPlugin testing.
 
 Features:
 - Supports GET, POST, and PUT
@@ -120,7 +120,7 @@ class NotifyReceiverServer(ThreadingHTTPServer):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Local REST receiver for CTP StableNotificationPlugin validation"
+        description="Local REST receiver for CTP StabilityWebhookPlugin validation"
     )
     parser.add_argument("--host", default="127.0.0.1", help="Bind host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=18080, help="Bind port (default: 18080)")

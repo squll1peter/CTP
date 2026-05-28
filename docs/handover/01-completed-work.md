@@ -20,3 +20,26 @@
 
 - Packaging/build validation completed after changes using ant jar and ant installer.
 - Runtime tree under build/CTP refreshed with updated resources and config defaults.
+
+## Stable-Group Notification Feature (2026-05-28)
+
+- `StabilityMonitorProcessor` — groups DICOM objects by configurable level (series / study / patient), detects inactivity after a timeout, fires a registered notification plugin.
+- `StabilityWebhookPlugin` — fires an HTTP REST call (GET / POST-JSON / POST-form) with DICOM-resolved and static arguments on group stability. Configurable retry and timeout.
+- `StabilityExecPlugin` — alternative to the REST plugin; executes a local OS command via `ProcessBuilder` (no shell). Arguments passed as `--key value` flags. Features: `dryRun` mode, `minInterval` throttle, bounded queue with drop-newest overflow, single worker thread, non-blocking `notify()`.
+- Argument syntax standardised to `key=DicomKeywordOrTag` (`=` delimiter; `:` accepted as legacy fallback).
+- Status HTML fields added to both stages and plugins (last file received, last trigger, last called URL / last command / last exit code).
+- `ConfigurationTemplates.xml` entries added for both plugins.
+- Python test receiver at `source/files/examples/stability_notify_receiver.py`.
+- Full test suite: BUILD SUCCESSFUL (0 failures). New tests: 44 (StabilityMonitor + StableNotification) + 15 (LocalCommand).
+
+## Object Branching Feature (2026-05-28)
+
+- `ObjectInlet` added as a queue-backed import stage for programmatic injection.
+- `ObjectFork` added as a pass-through processor that copies objects to one or more target inlets.
+- `ObjectRouter` added as a selective diversion processor for non-matching DICOM objects.
+- `ConfigurationTemplates.xml` updated with templates for all three new stages.
+- New tests added and passing:
+	- `ObjectInletTest` (11)
+	- `ObjectForkTest` (16)
+	- `ObjectRouterTest` (15)
+- Full test suite: BUILD SUCCESSFUL (0 failures).

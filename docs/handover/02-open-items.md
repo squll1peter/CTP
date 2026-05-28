@@ -18,3 +18,9 @@
 ## Performance Track
 
 - Continue Stage 17 performance roadmap after decompressor removal decision is finalized in active config.
+
+## Object Branching Follow-Up
+
+- Add an example configuration showing two-pipeline `ObjectFork`/`ObjectRouter` + `ObjectInlet` topology.
+- Evaluate queue guardrails for inlet injection bursts (high-water alarms, optional max depth policy).
+- Decide whether routing for non-DICOM objects is required in future revisions.

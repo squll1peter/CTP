@@ -1,6 +1,6 @@
 # Stable Notification Local Receiver Test
 
-This guide sets up a local REST counterpart for `StableNotificationPlugin` using Python standard library only.
+This guide sets up a local REST counterpart for `StabilityWebhookPlugin` using Python standard library only.
 
 ## 1) Start the receiver
 
@@ -28,13 +28,13 @@ Use this plugin in your `config.xml` test setup:
 
 ```xml
 <Plugin
-    name="StableNotificationPlugin"
-    class="org.rsna.ctp.plugin.StableNotificationPlugin"
+    name="StabilityWebhookPlugin"
+    class="org.rsna.ctp.plugin.StabilityWebhookPlugin"
     id="StableNotify"
     baseUrl="http://127.0.0.1:18080/api/notify"
     method="POST"
     contentType="json"
-    arguments="patientID:00100020;studyUID:0020000D;seriesUID:0020000E;accession:00080050"
+    arguments="patientID=PatientID;studyUID=StudyInstanceUID;seriesUID=SeriesInstanceUID;accession=AccessionNumber"
     otherArguments="source=CTP"
     timeout="5000"
     retry="3"

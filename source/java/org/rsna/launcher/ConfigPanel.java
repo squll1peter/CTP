@@ -457,6 +457,7 @@ public class ConfigPanel extends BasePanel {
 			}
 
 			childrenMenu = new JMenu("Children");
+			childrenMenu.setEnabled(false);
 
 			JMenu helpMenu = new JMenu("Help");
 			JMenuItem helpItem = new JMenuItem("Configuration Editor Instructions");
@@ -513,14 +514,27 @@ public class ConfigPanel extends BasePanel {
 			}
 		}
 
-		public void setChildrenMenu(String parentName, Template parentTemplate) {
+		public void setChildrenMenu(String parentName, Template parentTemplate, Element parentElement) {
 			childrenMenu.removeAll();
+			childrenMenu.setEnabled(false);
 			if (parentTemplate != null) {
 				ChildImpl impl = new ChildImpl(parentName, parentTemplate);
 				String[] childNames = parentTemplate.getChildNames();
 				childrenMenu.setEnabled( (childNames.length > 0) );
 				for (String name : childNames) {
 					ComponentMenuItem item = new ComponentMenuItem(name);
+					Template childTemplate = parentTemplate.getChildTemplate(name);
+					if (childTemplate != null && "no".equals(childTemplate.getTemplateElement().getAttribute("allowMultiples"))
+							&& parentElement != null) {
+						Node child = parentElement.getFirstChild();
+						while (child != null) {
+							if ((child instanceof Element) && name.equals(((Element)child).getTagName())) {
+								item.setEnabled(false);
+								break;
+							}
+							child = child.getNextSibling();
+						}
+					}
 					item.addActionListener(impl);
 					childrenMenu.add(item);
 				}
@@ -853,6 +867,8 @@ public class ConfigPanel extends BasePanel {
 			DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
 			if (treeNode != null) {
 				dataPane.edit( treeNode );
+			} else {
+				menuPane.setChildrenMenu("", null, null);
 			}
 		}
 
@@ -1036,7 +1052,7 @@ public class ConfigPanel extends BasePanel {
 				else displayForm(userObject);
 				jspData.setViewportView(this);
 				jspData.getVerticalScrollBar().setValue(0);
-				menuPane.setChildrenMenu(userObject.toString(), userObject.getTemplate());
+				menuPane.setChildrenMenu(userObject.toString(), userObject.getTemplate(), userObject.element);
 			}
 		}
 

@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.rsna.ctp.objects.DicomObject;
 import org.rsna.ctp.objects.FileObject;
+import org.rsna.ctp.plugin.StabilityWebhookPlugin;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -87,6 +88,15 @@ public class StabilityMonitorProcessorTest {
         Method m = StabilityMonitorProcessor.class.getDeclaredMethod("getGroupKey", DicomObject.class);
         m.setAccessible(true);
         return (String) m.invoke(proc, dob);
+    }
+
+    private void invokeFireNotification(StabilityMonitorProcessor proc, StabilityMonitorProcessor.GroupRecord record) throws Exception {
+        Field notifierField = StabilityMonitorProcessor.class.getDeclaredField("notifier");
+        notifierField.setAccessible(true);
+        Object notifier = notifierField.get(proc);
+        Method m = notifier.getClass().getDeclaredMethod("fireNotification", StabilityMonitorProcessor.GroupRecord.class);
+        m.setAccessible(true);
+        m.invoke(notifier, record);
     }
 
     // ------------------------------------------------------------------
@@ -279,7 +289,30 @@ public class StabilityMonitorProcessorTest {
 
         assertTrue("one DICOM group must be tracked after processing one object",
                 proc.getStatusHTML().contains("Active groups:</td><td>1"));
+        assertTrue("status must show last received file path",
+            proc.getStatusHTML().contains(dummyDcm.getAbsolutePath()));
+        assertTrue("status must show last received timestamp row",
+            proc.getStatusHTML().contains("Last file received at:"));
     }
+
+        @Test
+        public void getStatusHTML_includesLastTriggerAndTime_afterNotificationFire() throws Exception {
+        StabilityMonitorProcessor proc = new StabilityMonitorProcessor(
+            buildElement("targetID", "plugin1"));
+        StabilityWebhookPlugin plugin = Mockito.mock(StabilityWebhookPlugin.class);
+        when(plugin.notify(null)).thenReturn(true);
+
+        Field pluginField = StabilityMonitorProcessor.class.getDeclaredField("plugin");
+        pluginField.setAccessible(true);
+        pluginField.set(proc, plugin);
+
+        invokeFireNotification(proc, new StabilityMonitorProcessor.GroupRecord("series-1", null, System.currentTimeMillis()));
+
+        String html = proc.getStatusHTML();
+        assertTrue("status must show last trigger key", html.contains("Last trigger:</td><td>series-1"));
+        assertTrue("status must show last trigger time row", html.contains("Last trigger at:"));
+        assertFalse("last trigger time must no longer be Never", html.contains("Last trigger at:</td><td>Never"));
+        }
 
     @Test
     public void process_dicomObject_returnsSameObjectUnchanged() throws Exception {

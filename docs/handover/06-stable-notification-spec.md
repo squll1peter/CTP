@@ -12,7 +12,7 @@ Two new components work together:
 
 | Component | Type | Package |
 |---|---|---|
-| `StableNotificationPlugin` | CTP Plugin | `org.rsna.ctp.plugin` |
+| `StabilityWebhookPlugin` | CTP Plugin | `org.rsna.ctp.plugin` |
 | `StabilityMonitorProcessor` | CTP Processor stage | `org.rsna.ctp.stdstages` |
 
 The **Processor** tracks arriving DICOM objects and detects when a group (series / study / patient) has become idle. The **Plugin** holds the HTTP connection configuration and fires the actual REST call.
@@ -21,11 +21,11 @@ All DICOM objects pass through the processor to the next pipeline stage unchange
 
 ---
 
-## Component 1 — StableNotificationPlugin
+## Component 1 — StabilityWebhookPlugin
 
-**File:** `source/java/org/rsna/ctp/plugin/StableNotificationPlugin.java`  
+**File:** `source/java/org/rsna/ctp/plugin/StabilityWebhookPlugin.java`  
 **Extends:** `AbstractPlugin`  
-**Declared in config.xml as:** `<Plugin class="org.rsna.ctp.plugin.StableNotificationPlugin" ...>`
+**Declared in config.xml as:** `<Plugin class="org.rsna.ctp.plugin.StabilityWebhookPlugin" ...>`
 
 ### Configuration Attributes
 
@@ -37,7 +37,7 @@ All DICOM objects pass through the processor to the next pipeline stage unchange
 | `baseUrl` | yes | — | REST endpoint URL (e.g. `https://example.com/api/notify`) |
 | `method` | no | `POST` | HTTP method: `GET`, `POST`, or `PUT` |
 | `contentType` | no | `json` | Body format for POST/PUT: `json` or `form` |
-| `arguments` | no | — | Semicolon-delimited `key:dicomtag` pairs for dynamic values |
+| `arguments` | no | — | Semicolon-delimited `key=value` pairs for dynamic values, where value is a DICOM keyword or tag |
 | `otherArguments` | no | — | Semicolon-delimited `key=value` static pairs |
 | `timeout` | no | `5000` | HTTP connect + read timeout in milliseconds |
 | `retry` | no | `3` | Number of retry attempts on failure |
@@ -49,7 +49,7 @@ All DICOM objects pass through the processor to the next pipeline stage unchange
 **`arguments`** — dynamic values resolved from the representative DICOM object at call time:
 
 ```
-arguments="patientID:00100020;studyUID:0020000D;accession:00080050"
+arguments="patientID=PatientID;studyUID=StudyInstanceUID;accession=AccessionNumber"
 ```
 
 The DICOM tag can be either a hex tag number (`00100020`) or a keyword (`PatientID`). Resolution uses `DicomObject.getElementValue(tagName, "")`.
@@ -103,7 +103,7 @@ Thread-safe. Returns `true` on HTTP 2xx; `false` otherwise.
 | `name` | yes | — | Display name |
 | `root` | yes | — | Working dir; used for temp representative files (`root/rep/`) |
 | `level` | no | `series` | Grouping level: `series`, `study`, or `patient` |
-| `targetID` | yes | — | ID of the `StableNotificationPlugin` to call |
+| `targetID` | yes | — | ID of the `StabilityWebhookPlugin` to call |
 | `timeout` | no | `60` | Inactivity timeout in **seconds** before firing |
 | `dicomScript` | no | — | CTP filter script; only matching objects are tracked |
 
@@ -142,13 +142,13 @@ Resolved in `start()` via `Configuration.getInstance().getRegisteredPlugin(targe
 
 ```xml
 <Plugin
-    name="StableNotificationPlugin"
-    class="org.rsna.ctp.plugin.StableNotificationPlugin"
+    name="StabilityWebhookPlugin"
+    class="org.rsna.ctp.plugin.StabilityWebhookPlugin"
     id="StableNotify"
     baseUrl="https://example.com/api/study-arrived"
     method="POST"
     contentType="json"
-    arguments="patientID:00100020;studyUID:0020000D;seriesUID:0020000E;accession:00080050"
+    arguments="patientID=PatientID;studyUID=StudyInstanceUID;seriesUID=SeriesInstanceUID;accession=AccessionNumber"
     otherArguments="source=CTP"
     timeout="5000"
     retry="3"
@@ -176,7 +176,7 @@ Resolved in `start()` via `Configuration.getInstance().getRegisteredPlugin(targe
 ## Threading Model
 
 - `groups` (`ConcurrentHashMap`) is safe for concurrent access from pipeline threads and the Notifier.
-- `StableNotificationPlugin.notify()` is stateless per-call; all fields are final. Safe to call from multiple threads.
+- `StabilityWebhookPlugin.notify()` is stateless per-call; all fields are final. Safe to call from multiple threads.
 - Representative file name is derived from the sanitized group key (non-alphanumeric chars → `_`), which is unique per group at the chosen level.
 
 ---
@@ -184,7 +184,7 @@ Resolved in `start()` via `Configuration.getInstance().getRegisteredPlugin(targe
 ## File Layout
 
 ```
-source/java/org/rsna/ctp/plugin/StableNotificationPlugin.java     ← new
+source/java/org/rsna/ctp/plugin/StabilityWebhookPlugin.java     ← new
 source/java/org/rsna/ctp/stdstages/StabilityMonitorProcessor.java ← new
 source/resources/ConfigurationTemplates.xml                        ← modified (Plugin + Processor templates added)
 ```

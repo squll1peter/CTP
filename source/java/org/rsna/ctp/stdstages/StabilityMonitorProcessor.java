@@ -15,13 +15,14 @@ import org.rsna.ctp.objects.DicomObject;
 import org.rsna.ctp.objects.FileObject;
 import org.rsna.ctp.pipeline.AbstractPipelineStage;
 import org.rsna.ctp.pipeline.Processor;
-import org.rsna.ctp.plugin.StableNotificationPlugin;
+import org.rsna.ctp.plugin.StabilityWebhookPlugin;
 import org.rsna.util.FileUtil;
+import org.rsna.util.StringUtil;
 import org.w3c.dom.Element;
 
 /**
  * A Processor stage that tracks DICOM objects grouped by series, study, or patient
- * and fires a REST API call via StableNotificationPlugin once the group has been
+ * and fires a REST API call via StabilityWebhookPlugin once the group has been
  * idle (no new objects) for a configurable timeout period.
  *
  * Non-DICOM objects pass through unmodified without any tracking.
@@ -33,7 +34,7 @@ import org.w3c.dom.Element;
  *   name         - display name
  *   root         - working directory; representative files stored in root/rep/
  *   level        - grouping level: series, study, or patient  (default: series)
- *   targetID     - id of the StableNotificationPlugin to call
+ *   targetID     - id of the StabilityWebhookPlugin to call
  *   timeout      - inactivity timeout in seconds before firing  (default: 60)
  *   dicomScript  - optional CTP filter script; only matching objects are tracked
  */
@@ -47,7 +48,9 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 	private final File repDir;
 
 	private File dicomScriptFile = null;
-	private volatile StableNotificationPlugin plugin = null;
+	private volatile StabilityWebhookPlugin plugin = null;
+	private volatile String lastTrigger = "";
+	private volatile long lastTriggerTime = 0;
 
 	private final ConcurrentHashMap<String, GroupRecord> groups = new ConcurrentHashMap<>();
 	private Notifier notifier = null;
@@ -88,11 +91,11 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 		Configuration config = Configuration.getInstance();
 		if (!targetID.isEmpty()) {
 			Object p = config.getRegisteredPlugin(targetID);
-			if (p instanceof StableNotificationPlugin) {
-				plugin = (StableNotificationPlugin) p;
-				logger.info(name + ": resolved StableNotificationPlugin id=\"" + targetID + "\"");
+			if (p instanceof StabilityWebhookPlugin) {
+				plugin = (StabilityWebhookPlugin) p;
+				logger.info(name + ": resolved StabilityWebhookPlugin id=\"" + targetID + "\"");
 			} else if (p != null) {
-				logger.warn(name + ": targetID \"" + targetID + "\" does not reference a StableNotificationPlugin");
+				logger.warn(name + ": targetID \"" + targetID + "\" does not reference a StabilityWebhookPlugin");
 			} else {
 				logger.warn(name + ": targetID \"" + targetID + "\" does not reference any registered Plugin");
 			}
@@ -252,6 +255,9 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 		}
 
 		private void fireNotification(GroupRecord record) {
+			lastTrigger = record.groupKey;
+			lastTriggerTime = System.currentTimeMillis();
+
 			DicomObject representative = null;
 			if (record.repFile != null && record.repFile.exists()) {
 				try {
@@ -262,7 +268,7 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 				}
 			}
 
-			StableNotificationPlugin p = plugin;
+			StabilityWebhookPlugin p = plugin;
 			if (p != null) {
 				boolean ok = p.notify(representative);
 				if (!ok) {
@@ -290,7 +296,27 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 		sb.append("<tr><td>Target plugin ID:</td><td>").append(targetID).append("</td></tr>");
 		sb.append("<tr><td>Plugin resolved:</td><td>").append(plugin != null ? "yes" : "no").append("</td></tr>");
 		sb.append("<tr><td>Active groups:</td><td>").append(groups.size()).append("</td></tr>");
+		sb.append("<tr><td>Last file received:</td><td>")
+			.append(lastTimeIn != 0 && lastFileIn != null ? htmlEscape(lastFileIn.getAbsolutePath()) : "No activity")
+			.append("</td></tr>");
+		sb.append("<tr><td>Last file received at:</td><td>")
+			.append(lastTimeIn != 0 ? StringUtil.getDateTime(lastTimeIn, "&nbsp;&nbsp;&nbsp;") : "Never")
+			.append("</td></tr>");
+		sb.append("<tr><td>Last trigger:</td><td>")
+			.append(lastTriggerTime != 0 ? htmlEscape(lastTrigger) : "Never")
+			.append("</td></tr>");
+		sb.append("<tr><td>Last trigger at:</td><td>")
+			.append(lastTriggerTime != 0 ? StringUtil.getDateTime(lastTriggerTime, "&nbsp;&nbsp;&nbsp;") : "Never")
+			.append("</td></tr>");
 		sb.append("</table>");
 		return sb.toString();
+	}
+
+	private static String htmlEscape(String s) {
+		if (s == null) return "";
+		return s.replace("&", "&amp;")
+		        .replace("<", "&lt;")
+		        .replace(">", "&gt;")
+		        .replace("\"", "&quot;");
 	}
 }

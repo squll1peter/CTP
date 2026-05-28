@@ -13,6 +13,7 @@ Superseded handover set was archived to:
 - Login flow now uses POST from the admin client popup.
 - LoginServlet warning spam from browser SSL probing is suppressed to reduce false-positive noise.
 - Default server setting for stage profiling is now disabled.
+- Object branching stages (`ObjectInlet`, `ObjectFork`, `ObjectRouter`) are implemented and tested.
 
 ## Read Order
 
@@ -21,3 +22,5 @@ Superseded handover set was archived to:
 3. 03-next-iteration-plan.md
 4. 04-performance-plan.md
 5. 05-stop-point-2026-05-27-ssl.md
+6. 09-stop-point-2026-05-28-notifications.md
+7. 10-stop-point-2026-05-28-object-branching.md

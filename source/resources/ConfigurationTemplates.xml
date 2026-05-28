@@ -87,8 +87,40 @@ It is preferred because it works with dynamic IP addresses.
 		</Plugin>
 
 		<Plugin>
-			<attr name="name" required="yes" default="StableNotificationPlugin"/>
-			<attr name="class" required="yes" default="org.rsna.ctp.plugin.StableNotificationPlugin" editable="no"/>
+			<attr name="name" required="yes" default="StabilityExecPlugin"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.plugin.StabilityExecPlugin" editable="no"/>
+			<attr name="id" required="yes" default="StabilityExec">
+				<helptext>Unique identifier referenced by the StabilityMonitorProcessor targetID attribute.</helptext>
+			</attr>
+			<attr name="command" required="yes" default="">
+				<helptext>Path (and optional base arguments) of the executable to run, e.g. /opt/scripts/notify.sh</helptext>
+			</attr>
+			<attr name="arguments" required="no" default="">
+				<helptext>Semicolon-delimited key=value pairs resolved dynamically from the representative DICOM object, where value is a DICOM keyword or tag, e.g. patientID=PatientID;studyUID=0020000D. Passed to the command as --key value flags.</helptext>
+			</attr>
+			<attr name="otherArguments" required="no" default="">
+				<helptext>Semicolon-delimited key=value static pairs always appended to the command, e.g. source=CTP;site=HOSP1. Passed as --key value flags after dynamic arguments.</helptext>
+			</attr>
+			<attr name="dryRun" required="no" default="no" options="yes|no">
+				<helptext>If yes, log the resolved command without executing it. Useful for verifying argument assembly during development.</helptext>
+			</attr>
+			<attr name="minInterval" required="no" default="0">
+				<helptext>Minimum milliseconds between command starts. 0 means no throttle. Pending commands are queued and processed one at a time with at least this gap between starts.</helptext>
+			</attr>
+			<attr name="maxQueueSize" required="no" default="100">
+				<helptext>Maximum number of pending command executions. When the queue is full, new notifications are dropped and a warning is logged.</helptext>
+			</attr>
+			<attr name="workingDir" required="no" default="">
+				<helptext>Working directory for the spawned process. Defaults to the plugin root directory, or the CTP home directory if root is not set.</helptext>
+			</attr>
+			<attr name="enable" required="no" default="yes" options="yes|no">
+				<helptext>Set to no to disable command execution without removing the plugin from config.</helptext>
+			</attr>
+		</Plugin>
+
+		<Plugin>
+			<attr name="name" required="yes" default="StabilityWebhookPlugin"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.plugin.StabilityWebhookPlugin" editable="no"/>
 			<attr name="id" required="yes" default="StableNotify">
 				<helptext>Unique identifier referenced by the StabilityMonitorProcessor targetID attribute.</helptext>
 			</attr>
@@ -102,7 +134,7 @@ It is preferred because it works with dynamic IP addresses.
 				<helptext>Body format for POST/PUT: json (application/json) or form (application/x-www-form-urlencoded).</helptext>
 			</attr>
 			<attr name="arguments" required="no" default="">
-				<helptext>Semicolon-delimited key:dicomtag pairs resolved dynamically from the representative DICOM object, e.g. patientID:00100020;studyUID:0020000D</helptext>
+				<helptext>Semicolon-delimited key=value pairs resolved dynamically from the representative DICOM object, where value may be a DICOM keyword or tag, e.g. patientID=PatientID;studyUID=0020000D</helptext>
 			</attr>
 			<attr name="otherArguments" required="no" default="">
 				<helptext>Semicolon-delimited key=value static pairs always included in the call, e.g. source=CTP;facility=HOSP1</helptext>
@@ -309,6 +341,16 @@ It is preferred because it works with dynamic IP addresses.
 				</attr>
 				<attr name="regex" required="no" default=""/>
 			</child>
+		</ImportService>
+
+		<ImportService>
+			<attr name="name" required="yes" default="ObjectInlet"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.stdstages.ObjectInlet" editable="no"/>
+			<attr name="id" required="yes" default="ObjectInlet">
+				<helptext>Unique identifier referenced by ObjectFork and ObjectRouter target attributes.</helptext>
+			</attr>
+			<attr name="root" required="yes" default="roots/ObjectInlet"/>
+			<attr name="enable" required="no" default="yes" options="yes|no"/>
 		</ImportService>
 
 		<Processor>
@@ -652,14 +694,45 @@ It is preferred because it works with dynamic IP addresses.
 				<helptext>Grouping level for stability detection.</helptext>
 			</attr>
 			<attr name="targetID" required="yes" default="StableNotify">
-				<helptext>The id of the StableNotificationPlugin that will fire the REST call.</helptext>
+				<helptext>The id of the StabilityWebhookPlugin that will fire the REST call.</helptext>
 			</attr>
 			<attr name="timeout" required="no" default="60">
-				<helptext>Inactivity timeout in seconds. The REST call fires when no new objects have arrived for this long.</helptext>
+				<helptext>Inactivity timeout in seconds. The REST call fires when no new objects have arrived for this long; the notifier checks roughly every max(1 second, timeout/2).</helptext>
 			</attr>
 			<attr name="dicomScript" required="no" default="">
 				<helptext>Optional CTP filter script. Only DICOM objects that match the script are tracked; non-matching and non-DICOM objects still pass through.</helptext>
 			</attr>
+		</Processor>
+
+		<Processor>
+			<attr name="name" required="yes" default="ObjectFork"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.stdstages.ObjectFork" editable="no"/>
+			<attr name="id" required="no" default=""/>
+			<attr name="root" required="yes" default="roots/ObjectFork"/>
+			<attr name="targets" required="yes" default="">
+				<helptext>Semicolon-separated list of ObjectInlet IDs to copy objects into.</helptext>
+			</attr>
+			<attr name="script" required="no" default="">
+				<helptext>Optional DICOM filter script. If absent all DICOM objects are forked; non-DICOM objects are always forked.</helptext>
+			</attr>
+			<attr name="enable" required="no" default="yes" options="yes|no"/>
+		</Processor>
+
+		<Processor>
+			<attr name="name" required="yes" default="ObjectRouter"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.stdstages.ObjectRouter" editable="no"/>
+			<attr name="id" required="no" default=""/>
+			<attr name="root" required="yes" default="roots/ObjectRouter"/>
+			<attr name="script" required="yes" default="scripts/ObjectRouter.script">
+				<helptext>DICOM filter script. Objects that match pass downstream; objects that do not match are diverted to the target inlet.</helptext>
+			</attr>
+			<attr name="target" required="yes" default="">
+				<helptext>ID of the ObjectInlet to divert non-matching DICOM objects to.</helptext>
+			</attr>
+			<attr name="quarantine" required="no" default="quarantines/ObjectRouter">
+				<helptext>Quarantine directory for objects that cannot be diverted (no resolved target).</helptext>
+			</attr>
+			<attr name="enable" required="no" default="yes" options="yes|no"/>
 		</Processor>
 
 		<StorageService>
