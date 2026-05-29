@@ -24,3 +24,4 @@ Superseded handover set was archived to:
 5. 05-stop-point-2026-05-27-ssl.md
 6. 09-stop-point-2026-05-28-notifications.md
 7. 10-stop-point-2026-05-28-object-branching.md
+8. 11-stop-point-2026-05-30-build-env-windows.md
