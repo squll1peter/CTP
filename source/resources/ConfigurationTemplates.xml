@@ -383,6 +383,34 @@ It is preferred because it works with dynamic IP addresses.
 		</Processor>
 
 		<Processor>
+			<attr name="name" required="yes" default="DicomConditionalAuditLogger"/>
+			<attr name="class" required="yes" default="org.rsna.ctp.stdstages.DicomConditionalAuditLogger" editable="no"/>
+			<attr name="root" required="yes" default="roots/DicomConditionalAuditLogger"/>
+			<attr name="id" required="yes" default="DicomConditionalAuditLogger"/>
+			<attr name="cacheID" required="no" default="">
+				<helptext>
+					The ID of an ObjectCache stage from which to obtain a DicomObject for
+					comparison with the current DicomObject.
+				</helptext>
+			</attr>
+			<attr name="auditLogID" required="yes" default=""/>
+			<attr name="auditLogTags" required="yes" default=""/>
+			<attr name="level" required="yes" default="instance" options="patient|study|instance">
+				<helptext>
+					The level at which log entries are to be made. For example, at the patient level,
+					an entry is made only when a new patient is encountered. At the instance level,
+					an entry is made for every object.
+				</helptext>
+			</attr>
+			<attr name="dicomScript" required="no" default="">
+				<helptext>
+					Optional filter script. If provided, only DICOM objects matching the script
+					are logged. If absent or invalid, the stage logs as a normal DicomAuditLogger.
+				</helptext>
+			</attr>
+		</Processor>
+
+		<Processor>
 			<attr name="name" required="yes" default="ObjectLogger"/>
 			<attr name="class" required="yes" default="org.rsna.ctp.stdstages.ObjectLogger" editable="no"/>
 			<attr name="interval" required="yes" default="1">

@@ -14,6 +14,7 @@ Superseded handover set was archived to:
 - LoginServlet warning spam from browser SSL probing is suppressed to reduce false-positive noise.
 - Default server setting for stage profiling is now disabled.
 - Object branching stages (`ObjectInlet`, `ObjectFork`, `ObjectRouter`) are implemented and tested.
+- RSNA delta documentation has been aligned to RSNA-style composition and corrected for identified behavior mismatches.
 
 ## Read Order
 
@@ -24,3 +25,5 @@ Superseded handover set was archived to:
 5. 05-stop-point-2026-05-27-ssl.md
 6. 09-stop-point-2026-05-28-notifications.md
 7. 10-stop-point-2026-05-28-object-branching.md
+8. 11-stop-point-2026-05-30-build-env-windows.md
+9. 12-stop-point-2026-05-30-rsna-delta-doc-alignment.md

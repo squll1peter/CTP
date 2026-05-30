@@ -16,6 +16,9 @@ import static org.mockito.Mockito.*;
  */
 public class StabilityExecPluginTest {
 
+    private static final boolean WINDOWS =
+            System.getProperty("os.name", "").toLowerCase().contains("win");
+
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
@@ -32,6 +35,18 @@ public class StabilityExecPluginTest {
         }
         pipeline.appendChild(el);
         return el;
+    }
+
+    private static String successCommand() {
+        return WINDOWS ? "cmd /c exit 0" : "/bin/true";
+    }
+
+    private static String failCommand() {
+        return WINDOWS ? "cmd /c exit 1" : "/bin/false";
+    }
+
+    private static String echoCommand() {
+        return WINDOWS ? "cmd /c echo" : "/bin/echo";
     }
 
     /**
@@ -55,7 +70,7 @@ public class StabilityExecPluginTest {
     @Test
     public void defaults_areApplied_whenOptionalAttributesMissing() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/true"));
+                buildElement("command", successCommand()));
         String html = p.getStatusHTML();
         assertTrue("default dryRun must be no",         html.contains("no"));
         assertTrue("default minInterval must be 0",     html.contains("Min Interval (ms):</td><td>0"));
@@ -78,7 +93,7 @@ public class StabilityExecPluginTest {
     public void dynamicArguments_parsedFromArguments() throws Exception {
         // Construction succeeds; enable=no so no execution
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command",   "/bin/true",
+                buildElement("command",   successCommand(),
                              "arguments", "pid={PatientID};suid={0020000D}",
                              "enable",    "no"));
         assertTrue(p.notify(null));
@@ -87,7 +102,7 @@ public class StabilityExecPluginTest {
     @Test
     public void staticArguments_parsedFromArguments() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command",        "/bin/true",
+                buildElement("command",        successCommand(),
                              "arguments",      "source=CTP;site=HOSP1",
                              "enable",         "no"));
         assertTrue(p.notify(null));
@@ -133,7 +148,7 @@ public class StabilityExecPluginTest {
     public void notify_returnsFalse_whenQueueFull() throws Exception {
         // maxQueueSize=1, do NOT start worker so queue stays full
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command",      "/bin/true",
+                buildElement("command",      successCommand(),
                              "maxQueueSize", "1"));
         // Fill the queue (worker not started, so item stays in queue)
         assertTrue("first notify must succeed (queue has room)", p.notify(null));
@@ -146,7 +161,7 @@ public class StabilityExecPluginTest {
     @Test
     public void notify_updatesLastTriggeredTime_onEnqueue() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/true"));
+                buildElement("command", successCommand()));
         assertTrue(p.notify(null));
         assertFalse("Last triggered must not be Never after notify()",
                 p.getStatusHTML().contains("Last triggered:</td><td>Never"));
@@ -163,7 +178,7 @@ public class StabilityExecPluginTest {
         when(representative.getElementValue("0020000D",  "")).thenReturn("1.2.3");
 
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command",        "/bin/echo",
+            buildElement("command",        echoCommand(),
                              "arguments",      "pid={PatientID};suid={0020000D};source=CTP",
                              "dryRun",         "yes"));
         p.start();
@@ -183,7 +198,7 @@ public class StabilityExecPluginTest {
     public void notify_fallsBackToColonDelimiterInArguments() throws Exception {
         // Legacy colon syntax still works, including keyword-wrapped values.
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command",   "/bin/true",
+                buildElement("command",   successCommand(),
                              "arguments", "pid:{PatientID}",
                              "enable",    "no"));
         assertTrue(p.notify(null));
@@ -195,7 +210,7 @@ public class StabilityExecPluginTest {
         when(representative.getElementValue("PatientID", "")).thenReturn("P123");
 
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/echo patient={PatientID}",
+            buildElement("command", echoCommand() + " patient={PatientID}",
                              "dryRun",  "yes"));
         p.start();
         try {
@@ -216,7 +231,7 @@ public class StabilityExecPluginTest {
     @Test
     public void notify_executesCommand_andRecordsZeroExitCode() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/true"));
+                buildElement("command", successCommand()));
         p.start();
         try {
             assertTrue(p.notify(null));
@@ -233,7 +248,7 @@ public class StabilityExecPluginTest {
     @Test
     public void notify_recordsNonZeroExitCode_onFailingCommand() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/false"));
+                buildElement("command", failCommand()));
         p.start();
         try {
             assertTrue(p.notify(null));
@@ -273,7 +288,7 @@ public class StabilityExecPluginTest {
     @Test
     public void getStatusHTML_containsAllExpectedLabels() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/true"));
+                buildElement("command", successCommand()));
         String html = p.getStatusHTML();
         assertTrue(html.contains("Enabled:"));
         assertTrue(html.contains("Dry Run:"));
@@ -291,7 +306,7 @@ public class StabilityExecPluginTest {
     @Test
     public void getStatusHTML_escapesSpecialCharsInCommand() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command", "/bin/script.sh", "dryRun", "yes"));
+                buildElement("command", (WINDOWS ? "cmd /c echo" : "/bin/script.sh"), "dryRun", "yes"));
         String html = p.getStatusHTML();
         // Command itself is benign, but verify escaping via injected argument value with &
         // We test htmlEscape indirectly through lastCommand after a dry-run execution
@@ -300,7 +315,7 @@ public class StabilityExecPluginTest {
             DicomObject representative = mock(DicomObject.class);
             when(representative.getElementValue("PatientID", "")).thenReturn("A&B");
             StabilityExecPlugin p2 = new StabilityExecPlugin(
-                    buildElement("command",   "/bin/echo",
+                    buildElement("command",   echoCommand(),
                      "arguments", "pid={PatientID}",
                                  "dryRun",    "yes"));
             p2.start();
