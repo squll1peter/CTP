@@ -92,6 +92,9 @@ It is preferred because it works with dynamic IP addresses.
 			<attr name="id" required="yes" default="StabilityExec">
 				<helptext>Unique identifier referenced by the StabilityMonitorProcessor targetID attribute.</helptext>
 			</attr>
+			<attr name="workingDir" required="no" default="">
+				<helptext>Working directory for the spawned process. Defaults to the plugin root directory, or the CTP home directory if root is not set.</helptext>
+			</attr>
 			<attr name="command" required="yes" default="">
 				<helptext>Path (and optional base arguments) of the executable to run, e.g. /opt/scripts/notify.sh</helptext>
 			</attr>
@@ -106,9 +109,6 @@ It is preferred because it works with dynamic IP addresses.
 			</attr>
 			<attr name="maxQueueSize" required="no" default="100">
 				<helptext>Maximum number of pending command executions. When the queue is full, new notifications are dropped and a warning is logged.</helptext>
-			</attr>
-			<attr name="workingDir" required="no" default="">
-				<helptext>Working directory for the spawned process. Defaults to the plugin root directory, or the CTP home directory if root is not set.</helptext>
 			</attr>
 			<attr name="enable" required="no" default="yes" options="yes|no">
 				<helptext>Set to no to disable command execution without removing the plugin from config.</helptext>
