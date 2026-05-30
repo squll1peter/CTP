@@ -137,6 +137,10 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 			String id = dob.getStudyInstanceUID();
 			return (auditLog.getEntriesForStudyUID(id).size() == 0);
 		}
+		else if (level.equals("series")) {
+			String id = dob.getSeriesInstanceUID();
+			return (auditLog.getEntriesForSeriesUID(id).size() == 0);
+		}
 		else return true;
 	}
 
@@ -144,6 +148,7 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 		String patientID = cachedObject.getPatientID();
 		String studyInstanceUID = cachedObject.getStudyInstanceUID();
 		String sopInstanceUID = cachedObject.getSOPInstanceUID();
+		String seriesInstanceUID = cachedObject.getSeriesInstanceUID();
 		String sopClassName = cachedObject.getSOPClassName();
 
 		try {
@@ -177,10 +182,12 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 				Integer id = auditLog.addEntry(entry, "xml",
 											  indexedPatientID(patientID),
 											  indexedStudyUID(studyInstanceUID),
+											  indexedSeriesUID(seriesInstanceUID),
 											  indexedObjectUID(sopInstanceUID));
 				auditLog.addEntryReference(id, 
 										   indexedPatientID(dicomObject.getPatientID()),
 										   indexedStudyUID(dicomObject.getStudyInstanceUID()),
+										   indexedSeriesUID(dicomObject.getSeriesInstanceUID()),
 										   indexedObjectUID(dicomObject.getSOPInstanceUID()));
 			}
 			catch (Exception ex) { logger.warn("Unable to insert the AuditLog entry"); }
@@ -231,6 +238,7 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 				auditLog.addEntry(entry, "xml",
 								  indexedPatientID(patientID),
 								  indexedStudyUID(studyInstanceUID),
+								  indexedSeriesUID(seriesInstanceUID),
 								  indexedObjectUID(sopInstanceUID));
 			}
 			catch (Exception ex) { logger.warn("Unable to insert the AuditLog entry"); }
@@ -248,8 +256,12 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 		return level.equals("patient") ? null : studyInstanceUID;
 	}
 
+	private String indexedSeriesUID(String seriesInstanceUID) {
+		return (level.equals("patient") || level.equals("study")) ? null : seriesInstanceUID;
+	}
+
 	private String indexedObjectUID(String sopInstanceUID) {
-		return (level.equals("patient") || level.equals("study")) ? null : sopInstanceUID;
+		return (level.equals("patient") || level.equals("study") || level.equals("series")) ? null : sopInstanceUID;
 	}
 
 	/**

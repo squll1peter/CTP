@@ -51,6 +51,7 @@ public class AuditLog extends AbstractPlugin {
 	private HTree timeTable = null;
 	private HTree patientIDIndex = null;
 	private HTree studyUIDIndex = null;
+	private HTree seriesUIDIndex = null;
 	private HTree objectUIDIndex = null;
 
 	/**
@@ -76,6 +77,7 @@ public class AuditLog extends AbstractPlugin {
 			timeTable = JdbmUtil.getHTree(recman, "time");
 			patientIDIndex = JdbmUtil.getHTree(recman, "patientID");
 			studyUIDIndex = JdbmUtil.getHTree(recman, "studyUID");
+			seriesUIDIndex = JdbmUtil.getHTree(recman, "seriesUID");
 			objectUIDIndex = JdbmUtil.getHTree(recman, "objectUID");
 		}
 		catch (Exception unable) { logger.warn("Unable to open the AuditLog database."); }
@@ -144,6 +146,8 @@ public class AuditLog extends AbstractPlugin {
 	 * or null if no entry is to be made in the patientID index.
 	 * @param studyUID the key in the studyUID index under which the entry is to listed,
 	 * or null if no entry is to be made in the studyUID index.
+	 * @param seriesUID the key in the seriesUID index under which the entry is to listed,
+	 * or null if no entry is to be made in the seriesUID index.
 	 * @param objectUID the key in the objectUID index under which the entry is to listed,
 	 * or null if no entry is to be made in the objectUID index.
 	 * @return the entry ID of the audit log entry.
@@ -153,6 +157,7 @@ public class AuditLog extends AbstractPlugin {
 										 String contentType,
 										 String patientID,
 										 String studyUID,
+										 String seriesUID,
 										 String objectUID) throws Exception {
 		Integer id = getNextID();
 		entryTable.put(id, entry);
@@ -160,6 +165,7 @@ public class AuditLog extends AbstractPlugin {
 		if (contentType != null) contentTypeTable.put(id, contentType);
 		if (patientID != null) appendID(patientIDIndex, patientID, id);
 		if (studyUID != null) appendID(studyUIDIndex, studyUID, id);
+		if (seriesUID != null) appendID(seriesUIDIndex, seriesUID, id);
 		if (objectUID != null) appendID(objectUIDIndex, objectUID, id);
 		recman.commit();
 		return id;
@@ -172,6 +178,8 @@ public class AuditLog extends AbstractPlugin {
 	 * or null if no entry is to be made in the patientID index.
 	 * @param studyUID the key in the studyUID index under which the entry is to listed,
 	 * or null if no entry is to be made in the studyUID index.
+	 * @param seriesUID the key in the seriesUID index under which the entry is to listed,
+	 * or null if no entry is to be made in the seriesUID index.
 	 * @param objectUID the key in the objectUID index under which the entry is to listed,
 	 * or null if no entry is to be made in the objectUID index.
 	 * @return the entry ID of the audit log entry.
@@ -180,9 +188,11 @@ public class AuditLog extends AbstractPlugin {
 	public synchronized Integer addEntryReference(Integer entryID,
 												 String patientID,
 												 String studyUID,
+												 String seriesUID,
 												 String objectUID) throws Exception {
 		if (patientID != null) appendID(patientIDIndex, patientID, entryID);
 		if (studyUID != null) appendID(studyUIDIndex, studyUID, entryID);
+		if (seriesUID != null) appendID(seriesUIDIndex, seriesUID, entryID);
 		if (objectUID != null) appendID(objectUIDIndex, objectUID, entryID);
 		recman.commit();
 		return entryID;
@@ -236,7 +246,15 @@ public class AuditLog extends AbstractPlugin {
 	public synchronized LinkedList<Integer> getEntriesForObjectUID(String objectUID) {
 		return getIDs(objectUIDIndex, objectUID);
 	}
-
+	/**
+	 * Get a list of entries for a specific series UID.
+	 * @param seriesUID the UID of the series.
+	 * @return the list of audit log entry IDs corresponding to the series UID,
+	 * or an empty list if no entry appears in the seriesUID index for the UID.
+	 */
+	public synchronized LinkedList<Integer> getEntriesForSeriesUID(String seriesUID) {
+		return getIDs(seriesUIDIndex, seriesUID);
+	}
 	/**
 	 * Get a list of entries containing a text string.
 	 * @param text the text to find anywhere in the entry.
