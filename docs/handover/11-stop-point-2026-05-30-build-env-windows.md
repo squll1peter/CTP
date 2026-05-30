@@ -43,7 +43,7 @@
 
 ## Immediate Next Start
 
-1. Commit this stop-point set (test portability fix + rebuilt artifacts + docs).
+1. Check current `git status` before assuming these historical changes are still pending.
 2. Continue next iteration work from:
    - `docs/handover/02-open-items.md`
    - `docs/handover/03-next-iteration-plan.md`

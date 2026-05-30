@@ -1,7 +1,7 @@
 # Spec: Stable-Group Notification Feature
 
 **Date:** 2026-05-27  
-**Status:** Implementing  
+**Status:** Historical design note; current source has drifted. See stop-points 09, 12, and 14 before implementing from this file.
 **Feature:** Fire a configurable REST API call when a DICOM series / study / patient has been idle (no new objects) for a configurable timeout.
 
 ---
@@ -17,7 +17,9 @@ Two new components work together:
 
 The **Processor** tracks arriving DICOM objects and detects when a group (series / study / patient) has become idle. The **Plugin** holds the HTTP connection configuration and fires the actual REST call.
 
-All DICOM objects pass through the processor to the next pipeline stage unchanged. Non-DICOM objects bypass the processor entirely.
+All DICOM objects pass through the processor to the next pipeline stage unchanged. Non-DICOM objects bypass tracking and continue downstream unchanged.
+
+> Current-source correction (2026-05-30): `StabilityMonitorProcessor` currently resolves only `StabilityWebhookPlugin`. It does not currently target `StabilityExecPlugin` or a shared notification interface.
 
 ---
 
@@ -37,8 +39,8 @@ All DICOM objects pass through the processor to the next pipeline stage unchange
 | `baseUrl` | yes | — | REST endpoint URL (e.g. `https://example.com/api/notify`) |
 | `method` | no | `POST` | HTTP method: `GET`, `POST`, or `PUT` |
 | `contentType` | no | `json` | Body format for POST/PUT: `json` or `form` |
-| `arguments` | no | — | Semicolon-delimited `key=value` pairs for dynamic values, where value is a DICOM keyword or tag |
-| `otherArguments` | no | — | Semicolon-delimited `key=value` static pairs |
+| `arguments` | no | — | Semicolon-delimited `key=value` pairs. Values wrapped in `{DicomKeywordOrTag}` are resolved from DICOM; bare values are literals. |
+| `otherArguments` | no | — | Present in templates only; current runtime does not consume it. |
 | `timeout` | no | `5000` | HTTP connect + read timeout in milliseconds |
 | `retry` | no | `3` | Number of retry attempts on failure |
 | `enable` | no | `yes` | Set to `no` to disable without removing from config |
@@ -46,13 +48,13 @@ All DICOM objects pass through the processor to the next pipeline stage unchange
 
 ### Argument Formats
 
-**`arguments`** — dynamic values resolved from the representative DICOM object at call time:
+**`arguments`** — DICOM-resolved and literal values in one list:
 
 ```
-arguments="patientID=PatientID;studyUID=StudyInstanceUID;accession=AccessionNumber"
+arguments="patientID={PatientID};studyUID={StudyInstanceUID};accession={AccessionNumber};source=CTP"
 ```
 
-The DICOM tag can be either a hex tag number (`00100020`) or a keyword (`PatientID`). Resolution uses `DicomObject.getElementValue(tagName, "")`.
+The DICOM tag can be either a hex tag number (`00100020`) or a keyword (`PatientID`) when wrapped in braces. Resolution uses `DicomObject.getElementValue(tagName, "")`.
 
 **`otherArguments`** — static literal values always included:
 
@@ -60,7 +62,7 @@ The DICOM tag can be either a hex tag number (`00100020`) or a keyword (`Patient
 otherArguments="source=CTP;facility=HOSP1"
 ```
 
-Both sets are merged into a single parameter map at call time (static arguments added after dynamic ones; duplicate keys use the static value).
+This was part of the original design, but it is not implemented in the current runtime. Use bare literal values in `arguments` or implement `otherArguments` before documenting it as supported.
 
 ### HTTP Request Behaviour
 
@@ -134,7 +136,7 @@ process(fileObject):
 
 ### Plugin Resolution
 
-Resolved in `start()` via `Configuration.getInstance().getRegisteredPlugin(targetID)`. If the referenced plugin is missing or the wrong type, a `WARN` is logged and no notifications are sent.
+Resolved in `start()` via `Configuration.getInstance().getRegisteredPlugin(targetID)`. Current source requires the referenced plugin to be a `StabilityWebhookPlugin`. If the referenced plugin is missing or the wrong type, a `WARN` is logged and no notifications are sent.
 
 ---
 
@@ -148,8 +150,7 @@ Resolved in `start()` via `Configuration.getInstance().getRegisteredPlugin(targe
     baseUrl="https://example.com/api/study-arrived"
     method="POST"
     contentType="json"
-    arguments="patientID=PatientID;studyUID=StudyInstanceUID;seriesUID=SeriesInstanceUID;accession=AccessionNumber"
-    otherArguments="source=CTP"
+    arguments="patientID={PatientID};studyUID={StudyInstanceUID};seriesUID={SeriesInstanceUID};accession={AccessionNumber};source=CTP"
     timeout="5000"
     retry="3"
     enable="yes"

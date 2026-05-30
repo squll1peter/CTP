@@ -44,8 +44,9 @@
 
 ## Immediate Next Start
 
-1. Complete commit and push of the pending implementation + documentation bundle.
-2. If desired, implement runtime support for `otherArguments` in stability plugins to remove template/runtime drift.
-3. Continue next iteration from:
+1. Check current `git status` before assuming the historical pending bundle is still pending.
+2. Decide whether to implement runtime support for `otherArguments` or remove it from templates/docs.
+3. Decide whether to refactor `StabilityMonitorProcessor` so `StabilityExecPlugin` can actually be a stable-group notification target.
+4. Continue next iteration from:
    - `docs/handover/02-open-items.md`
    - `docs/handover/03-next-iteration-plan.md`

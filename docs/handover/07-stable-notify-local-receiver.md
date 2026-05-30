@@ -34,8 +34,7 @@ Use this plugin in your `config.xml` test setup:
     baseUrl="http://127.0.0.1:18080/api/notify"
     method="POST"
     contentType="json"
-    arguments="patientID=PatientID;studyUID=StudyInstanceUID;seriesUID=SeriesInstanceUID;accession=AccessionNumber"
-    otherArguments="source=CTP"
+    arguments="patientID={PatientID};studyUID={StudyInstanceUID};seriesUID={SeriesInstanceUID};accession={AccessionNumber};source=CTP"
     timeout="5000"
     retry="3"
     enable="yes"
@@ -54,6 +53,8 @@ Ensure your `StabilityMonitorProcessor` points to this plugin:
     timeout="120"
     dicomScript="scripts/StabilityMonitor.script"/>
 ```
+
+Current-source note: `otherArguments` appears in templates, but the runtime currently parses only `arguments`. Put static values such as `source=CTP` directly in `arguments`.
 
 ## 3) Run test and verify
 

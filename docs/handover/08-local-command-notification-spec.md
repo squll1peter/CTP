@@ -8,7 +8,9 @@
 
 ## Overview
 
-`StabilityExecPlugin` is a direct counterpart to `StabilityWebhookPlugin`. It is notified by `StabilityMonitorProcessor` and runs a configurable local executable instead of making an HTTP call.
+`StabilityExecPlugin` is a command-execution counterpart to `StabilityWebhookPlugin`.
+
+> Current-source correction (2026-05-30): despite the original design intent, `StabilityMonitorProcessor` currently resolves only `StabilityWebhookPlugin`. `StabilityExecPlugin` is implemented and tested as a plugin, but it is not currently reachable as a stable-group notification target without refactoring the processor to a shared notification interface.
 
 | Component | Type | Package |
 |---|---|---|
@@ -37,8 +39,8 @@ The plugin does not block the pipeline. `notify()` enqueues the resolved command
 | `name` | yes | — | Display name |
 | `root` | no | — | Plugin working directory (inherited from `AbstractPlugin`) |
 | `command` | yes | — | Path (and optional base args) of the executable |
-| `arguments` | no | — | Semicolon-delimited `key=DicomKeywordOrTag` pairs for dynamic values |
-| `otherArguments` | no | — | Semicolon-delimited `key=value` static pairs |
+| `arguments` | no | — | Semicolon-delimited `key=value` pairs. Values wrapped in `{DicomKeywordOrTag}` are resolved from DICOM; bare values are literals. |
+| `otherArguments` | no | — | Present in templates only; current runtime does not consume it. |
 | `dryRun` | no | `no` | `yes` = log resolved command without executing |
 | `minInterval` | no | `0` | Min ms between command starts. `0` = no throttle |
 | `maxQueueSize` | no | `100` | Max queued executions. Excess notifications are dropped |
@@ -49,15 +51,14 @@ The plugin does not block the pipeline. `notify()` enqueues the resolved command
 
 ## Argument Syntax
 
-Identical to `StabilityWebhookPlugin`. Values for `arguments` are resolved against the representative DICOM object at call time; `otherArguments` are literal.
+Identical to current `StabilityWebhookPlugin` runtime syntax. Values wrapped in braces are resolved against the representative DICOM object at call time; bare values are literal. The current runtime does not consume `otherArguments`.
 
 ```xml
 <Plugin class="org.rsna.ctp.plugin.StabilityExecPlugin"
         id="StabilityExec"
         name="StabilityExec"
         command="/opt/scripts/on-stable.sh"
-        arguments="patientID=PatientID;studyUID=StudyInstanceUID;accession=AccessionNumber"
-        otherArguments="source=CTP;site=HOSP1"
+        arguments="patientID={PatientID};studyUID={StudyInstanceUID};accession={AccessionNumber};source=CTP;site=HOSP1"
         minInterval="10000"
         maxQueueSize="50"
         dryRun="no"
@@ -68,7 +69,7 @@ Identical to `StabilityWebhookPlugin`. Values for `arguments` are resolved again
 
 ## Command Invocation Format
 
-The plugin uses `ProcessBuilder` (no shell). Each resolved key=value pair is appended as a separate `--key value` flag pair. Dynamic args appear first (in declaration order), then static args.
+The plugin uses `ProcessBuilder` (no shell). Each resolved key=value pair is appended as a separate `--key value` flag pair. Arguments appear in declaration order.
 
 For the config above, a typical invocation would be:
 
@@ -140,14 +141,14 @@ The admin UI status table shows:
 
 ## Relating to StabilityMonitorProcessor
 
-`StabilityExecPlugin` is wired to the processor via the same `targetID` mechanism as `StabilityWebhookPlugin`. Only one plugin type can be the target of a given processor:
+Original intent was to wire `StabilityExecPlugin` to the processor via the same `targetID` mechanism as `StabilityWebhookPlugin`. Current source does not do that yet; the example below is a target-state example, not working current configuration.
 
 ```xml
 <Processor class="org.rsna.ctp.stdstages.StabilityMonitorProcessor"
            name="StabilityMonitor"
            targetID="StabilityExec"
            level="series"
-           timeout="120000" .../>
+           timeout="120" .../>
 
 <Plugin class="org.rsna.ctp.plugin.StabilityExecPlugin"
         id="StabilityExec" .../>

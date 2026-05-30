@@ -23,10 +23,10 @@
 
 ## Stable-Group Notification Feature (2026-05-28)
 
-- `StabilityMonitorProcessor` — groups DICOM objects by configurable level (series / study / patient), detects inactivity after a timeout, fires a registered notification plugin.
+- `StabilityMonitorProcessor` — groups DICOM objects by configurable level (series / study / patient), detects inactivity after a timeout, currently fires a registered `StabilityWebhookPlugin`.
 - `StabilityWebhookPlugin` — fires an HTTP REST call (GET / POST-JSON / POST-form) with DICOM-resolved and static arguments on group stability. Configurable retry and timeout.
-- `StabilityExecPlugin` — alternative to the REST plugin; executes a local OS command via `ProcessBuilder` (no shell). Arguments passed as `--key value` flags. Features: `dryRun` mode, `minInterval` throttle, bounded queue with drop-newest overflow, single worker thread, non-blocking `notify()`.
-- Argument syntax standardised to `key=DicomKeywordOrTag` (`=` delimiter; `:` accepted as legacy fallback).
+- `StabilityExecPlugin` — command-execution plugin implementation exists and has tests, but it is not currently reachable from `StabilityMonitorProcessor` because that processor resolves only `StabilityWebhookPlugin`.
+- Argument syntax in current plugin code is `key=value`; values wrapped as `{DicomKeywordOrTag}` are DICOM-resolved and bare values are literals. The `:` delimiter is accepted as a legacy fallback.
 - Status HTML fields added to both stages and plugins (last file received, last trigger, last called URL / last command / last exit code).
 - `ConfigurationTemplates.xml` entries added for both plugins.
 - Python test receiver at `source/files/examples/stability_notify_receiver.py`.

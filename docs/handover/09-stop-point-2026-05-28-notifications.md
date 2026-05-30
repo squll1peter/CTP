@@ -13,8 +13,8 @@
 
 ### StabilityExecPlugin (complete)
 
-7. `StabilityExecPlugin` — executes a local OS command when notified by `StabilityMonitorProcessor`.
-   - Same `targetID` wiring as `StabilityWebhookPlugin`; drop-in alternative.
+7. `StabilityExecPlugin` — executes a local OS command when its `notify()` method is called.
+   - Current-source correction: this is not a drop-in `StabilityMonitorProcessor` target yet. The processor currently resolves only `StabilityWebhookPlugin`.
    - `ProcessBuilder` direct exec (no shell); args passed as `--key value` flag pairs.
    - `dryRun=yes` logs the resolved command without spawning a process.
    - `minInterval` throttles execution rate; a bounded `ArrayBlockingQueue` buffers pending work; excess notifications are dropped with a WARN log entry.
@@ -26,9 +26,9 @@
 - 15 new tests for `StabilityExecPlugin` — all pass.
 - Full suite: BUILD SUCCESSFUL (all test classes, 0 failures).
 
-### Uncommitted Changes (as of this stop-point)
+### Historical repository state at this stop-point
 
-The following changes are not yet committed to git:
+The following changes were pending when this stop-point was written. Do not treat this as current git state without checking `git status`:
 
 | Change | Files |
 |---|---|
@@ -42,15 +42,15 @@ The following changes are not yet committed to git:
 
 ## Current Operational State
 
-- All code compiles and all tests pass.
-- No binaries have been rebuilt yet since the last binary commit (`a7a8e9e`). A `ant jar` + `ant installer` rebuild is needed before deployment.
+- All code compiled and all tests passed at this stop-point.
+- Later stop-points report that `ant jar` and `ant installer` were run successfully on 2026-05-30. Re-check current artifacts before deployment.
 - The Python receiver is functional and committed separately.
 
 ---
 
 ## Immediate Next Start
 
-1. **Commit all pending changes** (`git add -A && git commit -m "..."`)
-2. **Rebuild binaries** (`ant jar && ant installer`) and commit updated JARs
-3. **Integration test** with a live CTP instance wired to both plugin types
-4. Continue from `docs/handover/03-next-iteration-plan.md` and `02-open-items.md`
+1. Decide and implement the notification-plugin interface if `StabilityExecPlugin` should be callable from `StabilityMonitorProcessor`.
+2. Integration test a live CTP instance with the webhook path.
+3. If the exec path is wired in, integration test command notifications separately with `dryRun=yes` first.
+4. Continue from `docs/handover/03-next-iteration-plan.md` and `02-open-items.md`.
