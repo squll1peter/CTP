@@ -48,7 +48,7 @@ import org.w3c.dom.Element;
  *   enable        - yes/no  (default: yes)
  *   logDetails    - log full response body on success  (default: no)
  */
-public class StabilityWebhookPlugin extends AbstractPlugin {
+public class StabilityWebhookPlugin extends AbstractPlugin implements StabilityNotificationPlugin {
 
 	static final Logger logger = Logger.getLogger(StabilityWebhookPlugin.class);
 
@@ -161,6 +161,7 @@ public class StabilityWebhookPlugin extends AbstractPlugin {
 	 * @param representative the first DicomObject received for the group; may be null
 	 * @return true on HTTP 2xx response; false otherwise
 	 */
+	@Override
 	public boolean notify(DicomObject representative) {
 		if (!enable) {
 			logger.debug(name + ": disabled, skipping notification");

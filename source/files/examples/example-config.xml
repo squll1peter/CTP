@@ -1,6 +1,6 @@
 <Configuration>
 
-    <Server port="8080" enableStageProfiling="yes" />
+    <Server port="8080" enableStageProfiling="no" />
 
    <Pipeline name="Client Pipeline">
 

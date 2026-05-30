@@ -10,7 +10,7 @@
 
 `StabilityExecPlugin` is a command-execution counterpart to `StabilityWebhookPlugin`.
 
-> Current-source correction (2026-05-30): despite the original design intent, `StabilityMonitorProcessor` currently resolves only `StabilityWebhookPlugin`. `StabilityExecPlugin` is implemented and tested as a plugin, but it is not currently reachable as a stable-group notification target without refactoring the processor to a shared notification interface.
+> Current-source correction (2026-05-30): `StabilityMonitorProcessor` now resolves a shared `StabilityNotificationPlugin` contract, so both `StabilityWebhookPlugin` and `StabilityExecPlugin` are valid `targetID` targets.
 
 | Component | Type | Package |
 |---|---|---|
@@ -39,8 +39,7 @@ The plugin does not block the pipeline. `notify()` enqueues the resolved command
 | `name` | yes | — | Display name |
 | `root` | no | — | Plugin working directory (inherited from `AbstractPlugin`) |
 | `command` | yes | — | Path (and optional base args) of the executable |
-| `arguments` | no | — | Semicolon-delimited `key=value` pairs. Values wrapped in `{DicomKeywordOrTag}` are resolved from DICOM; bare values are literals. |
-| `otherArguments` | no | — | Present in templates only; current runtime does not consume it. |
+| `arguments` | no | — | Whitespace-delimited command-line argument templates. DICOM placeholders use DirectoryStorageService structure syntax, such as `{StudyInstanceUID}` or `(0020,000D)`. |
 | `dryRun` | no | `no` | `yes` = log resolved command without executing |
 | `minInterval` | no | `0` | Min ms between command starts. `0` = no throttle |
 | `maxQueueSize` | no | `100` | Max queued executions. Excess notifications are dropped |
@@ -51,14 +50,14 @@ The plugin does not block the pipeline. `notify()` enqueues the resolved command
 
 ## Argument Syntax
 
-Identical to current `StabilityWebhookPlugin` runtime syntax. Values wrapped in braces are resolved against the representative DICOM object at call time; bare values are literal. The current runtime does not consume `otherArguments`.
+Arguments are command-line template tokens, not semicolon-delimited key/value pairs. DICOM placeholders are resolved against the representative DICOM object at call time using the same placeholder style as `DirectoryStorageService` `structure`.
 
 ```xml
 <Plugin class="org.rsna.ctp.plugin.StabilityExecPlugin"
         id="StabilityExec"
         name="StabilityExec"
         command="/opt/scripts/on-stable.sh"
-        arguments="patientID={PatientID};studyUID={StudyInstanceUID};accession={AccessionNumber};source=CTP;site=HOSP1"
+        arguments="-i=/data/in/{StudyInstanceUID} --study=(0020,000D) --source=CTP --site=HOSP1"
         minInterval="10000"
         maxQueueSize="50"
         dryRun="no"
@@ -69,15 +68,15 @@ Identical to current `StabilityWebhookPlugin` runtime syntax. Values wrapped in 
 
 ## Command Invocation Format
 
-The plugin uses `ProcessBuilder` (no shell). Each resolved key=value pair is appended as a separate `--key value` flag pair. Arguments appear in declaration order.
+The plugin uses `ProcessBuilder` (no shell). The command attribute and the arguments attribute are split on whitespace, then DICOM placeholders are resolved in each token. Arguments appear in declaration order.
 
 For the config above, a typical invocation would be:
 
 ```
-/opt/scripts/on-stable.sh --patientID P123 --studyUID 1.2.840.10008.5 --accession ACC001 --source CTP --site HOSP1
+/opt/scripts/on-stable.sh -i=/data/in/1.2.840.10008.5 --study=1.2.840.10008.5 --source=CTP --site=HOSP1
 ```
 
-Arguments with spaces in values are passed as separate tokens, so no shell quoting is required.
+Shell expansion and shell quoting are not performed. Keep each argument token whitespace-free.
 
 ---
 
@@ -141,7 +140,7 @@ The admin UI status table shows:
 
 ## Relating to StabilityMonitorProcessor
 
-Original intent was to wire `StabilityExecPlugin` to the processor via the same `targetID` mechanism as `StabilityWebhookPlugin`. Current source does not do that yet; the example below is a target-state example, not working current configuration.
+`StabilityExecPlugin` is wired to the processor via the same `targetID` mechanism as `StabilityWebhookPlugin`.
 
 ```xml
 <Processor class="org.rsna.ctp.stdstages.StabilityMonitorProcessor"
@@ -162,14 +161,14 @@ Original intent was to wire `StabilityExecPlugin` to the processor via the same 
 |---|---|
 | `defaults_areApplied_whenOptionalAttributesMissing` | Default values present in status HTML |
 | `constructor_parsesCommandTokens` | Multi-token base command (e.g. `/usr/bin/python3 script.py`) |
-| `dynamicArguments_parsedFromArguments` | `key=DicomKeyword` pairs construct without error |
-| `staticArguments_parsedFromOtherArguments` | `key=value` static pairs construct without error |
+| `dynamicArguments_parsedFromArgumentsTemplate` | DICOM placeholder argument templates construct without error |
+| `staticArguments_parsedFromArgumentsTemplate` | Static argument templates construct without error |
 | `notify_disabled_returnsTrueWithoutEnqueue` | `enable=no` short-circuits immediately |
 | `notify_dryRun_logsCommandWithoutExecutingRealProcess` | Nonexistent binary + dryRun=yes → no IOException |
 | `notify_returnsFalse_whenQueueFull` | `maxQueueSize=1`, fill queue, second notify returns false |
 | `notify_updatesLastTriggeredTime_onEnqueue` | `lastTriggeredTime` is stamped on enqueue |
-| `notify_buildsCorrectCommandTokens_withDynamicAndStaticArgs` | `--pid P123 --suid 1.2.3 --source CTP` in lastCommand |
-| `notify_fallsBackToColonDelimiterInArguments` | `pid:PatientID` (legacy syntax) accepted |
+| `notify_buildsCorrectCommandTokens_fromArgumentTemplates` | `-p=P123 --study=1.2.3 --source=CTP` in lastCommand |
+| `notify_substitutesDicomKeywordInsideCommandTokens` | DICOM placeholders in command tokens are resolved |
 | `notify_executesCommand_andRecordsZeroExitCode` | `/bin/true` → exit code 0 in status HTML |
 | `notify_recordsNonZeroExitCode_onFailingCommand` | `/bin/false` → non-zero exit code |
 | `notify_handlesNonExistentCommand_withoutCrashing` | Nonexistent binary → exit code -1, worker survives |

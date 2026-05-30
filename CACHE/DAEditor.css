@@ -1,0 +1,114 @@
+table {
+	background: #ffffff;
+}
+
+div.main {
+	border: none;
+	margin: 0;
+	padding: 12px;
+	overflow: auto;
+	background: #edf3fa;
+}
+
+div.main table {
+	margin: 0;
+	font-size: 12pt;
+	min-width: 900px;
+	border-collapse: collapse;
+	box-shadow: 0 1px 3px rgba(14,44,68,0.12);
+}
+
+div.main th {
+	text-align: center;
+	padding: 7px 10px;
+	white-space: nowrap;
+}
+
+div.main td {
+	vertical-align: middle;
+	padding: 5px 8px;
+}
+
+.centered {
+	text-align: center;
+	padding: 0;
+	display: inline-block;
+	max-width: 100%;
+	background: #f8fbff;
+	border: 1px solid #d5e1ee;
+	border-radius: 10px;
+	box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+	overflow-x: auto;
+}
+
+.centeredblock {
+	text-align: center;
+}
+
+.tx {
+	width: 100%;
+	font-family: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+	font-size: 14px;
+	line-height: 1.35;
+	padding: 6px 8px;
+	border: 1px solid #bfd2e4;
+	border-radius: 6px;
+	background: #ffffff;
+	color: #1d2a36;
+}
+
+.tx:focus {
+	outline: none;
+	border-color: #5b8fbd;
+	box-shadow: 0 0 0 2px rgba(47,111,165,0.16);
+}
+
+.lt {
+	width: 6%;
+	text-align: center;
+	padding: 5px 8px;
+}
+
+.ct {
+	width: 32%;
+	text-align: left;
+	padding: 5px 8px;
+}
+
+.rt {
+	width: 62%;
+	text-align: left;
+	padding: 5px 8px;
+}
+
+.textbox {
+	font-family: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+}
+
+.tag {
+	font-family: "Consolas", "SFMono-Regular", "Liberation Mono", monospace;
+	font-size: 10pt;
+	font-weight: 700;
+	color: #1f5f94;
+}
+
+input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: #2f6fa5;
+	vertical-align: middle;
+}
+
+@media (max-width: 760px) {
+	div.main {
+		padding: 8px;
+	}
+
+	div.main table {
+		font-size: 11pt;
+	}
+
+	.tx {
+		font-size: 13px;
+	}
+}

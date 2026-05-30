@@ -19,7 +19,7 @@ The **Processor** tracks arriving DICOM objects and detects when a group (series
 
 All DICOM objects pass through the processor to the next pipeline stage unchanged. Non-DICOM objects bypass tracking and continue downstream unchanged.
 
-> Current-source correction (2026-05-30): `StabilityMonitorProcessor` currently resolves only `StabilityWebhookPlugin`. It does not currently target `StabilityExecPlugin` or a shared notification interface.
+> Current-source correction (2026-05-30): `StabilityMonitorProcessor` now resolves a shared `StabilityNotificationPlugin` contract. Both `StabilityWebhookPlugin` and `StabilityExecPlugin` can be notification targets.
 
 ---
 

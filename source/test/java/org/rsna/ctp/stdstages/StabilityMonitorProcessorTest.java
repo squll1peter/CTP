@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import org.rsna.ctp.objects.DicomObject;
 import org.rsna.ctp.objects.FileObject;
+import org.rsna.ctp.plugin.StabilityExecPlugin;
+import org.rsna.ctp.plugin.StabilityNotificationPlugin;
 import org.rsna.ctp.plugin.StabilityWebhookPlugin;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -295,8 +297,15 @@ public class StabilityMonitorProcessorTest {
             proc.getStatusHTML().contains("Last file received at:"));
     }
 
-        @Test
-        public void getStatusHTML_includesLastTriggerAndTime_afterNotificationFire() throws Exception {
+    @Test
+    public void stabilityExecPlugin_implementsNotificationContract() {
+        assertTrue(
+                "StabilityMonitorProcessor must be able to target StabilityExecPlugin",
+                StabilityNotificationPlugin.class.isAssignableFrom(StabilityExecPlugin.class));
+    }
+
+    @Test
+    public void getStatusHTML_includesLastTriggerAndTime_afterNotificationFire() throws Exception {
         StabilityMonitorProcessor proc = new StabilityMonitorProcessor(
             buildElement("targetID", "plugin1"));
         StabilityWebhookPlugin plugin = Mockito.mock(StabilityWebhookPlugin.class);
@@ -312,7 +321,7 @@ public class StabilityMonitorProcessorTest {
         assertTrue("status must show last trigger key", html.contains("Last trigger:</td><td>series-1"));
         assertTrue("status must show last trigger time row", html.contains("Last trigger at:"));
         assertFalse("last trigger time must no longer be Never", html.contains("Last trigger at:</td><td>Never"));
-        }
+    }
 
     @Test
     public void process_dicomObject_returnsSameObjectUnchanged() throws Exception {

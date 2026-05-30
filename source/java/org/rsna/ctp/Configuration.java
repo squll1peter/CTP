@@ -186,7 +186,7 @@ public class Configuration {
 						String temp = serverElement.getAttribute("usersClassName").trim();
 						if (!temp.equals("")) usersClassName = temp;
 						requireAuthentication = serverElement.getAttribute("requireAuthentication").equals("yes");
-						enableStageProfiling = !serverElement.getAttribute("enableStageProfiling").equals("no");
+						enableStageProfiling = serverElement.getAttribute("enableStageProfiling").equals("yes");
 
 						//Set the proxy parameters
 						ProxyServer.getInstance(serverElement);

@@ -15,14 +15,14 @@ import org.rsna.ctp.objects.DicomObject;
 import org.rsna.ctp.objects.FileObject;
 import org.rsna.ctp.pipeline.AbstractPipelineStage;
 import org.rsna.ctp.pipeline.Processor;
-import org.rsna.ctp.plugin.StabilityWebhookPlugin;
+import org.rsna.ctp.plugin.StabilityNotificationPlugin;
 import org.rsna.util.FileUtil;
 import org.rsna.util.StringUtil;
 import org.w3c.dom.Element;
 
 /**
  * A Processor stage that tracks DICOM objects grouped by series, study, or patient
- * and fires a REST API call via StabilityWebhookPlugin once the group has been
+ * and notifies a StabilityNotificationPlugin once the group has been
  * idle (no new objects) for a configurable timeout period.
  *
  * Non-DICOM objects pass through unmodified without any tracking.
@@ -34,7 +34,7 @@ import org.w3c.dom.Element;
  *   name         - display name
  *   root         - working directory; representative files stored in root/rep/
  *   level        - grouping level: series, study, or patient  (default: series)
- *   targetID     - id of the StabilityWebhookPlugin to call
+ *   targetID     - id of the StabilityNotificationPlugin to call
  *   timeout      - inactivity timeout in seconds before firing  (default: 60)
  *   dicomScript  - optional CTP filter script; only matching objects are tracked
  */
@@ -48,7 +48,7 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 	private final File repDir;
 
 	private File dicomScriptFile = null;
-	private volatile StabilityWebhookPlugin plugin = null;
+	private volatile StabilityNotificationPlugin plugin = null;
 	private volatile String lastTrigger = "";
 	private volatile long lastTriggerTime = 0;
 
@@ -91,11 +91,11 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 		Configuration config = Configuration.getInstance();
 		if (!targetID.isEmpty()) {
 			Object p = config.getRegisteredPlugin(targetID);
-			if (p instanceof StabilityWebhookPlugin) {
-				plugin = (StabilityWebhookPlugin) p;
-				logger.info(name + ": resolved StabilityWebhookPlugin id=\"" + targetID + "\"");
+			if (p instanceof StabilityNotificationPlugin) {
+				plugin = (StabilityNotificationPlugin) p;
+				logger.info(name + ": resolved StabilityNotificationPlugin id=\"" + targetID + "\"");
 			} else if (p != null) {
-				logger.warn(name + ": targetID \"" + targetID + "\" does not reference a StabilityWebhookPlugin");
+				logger.warn(name + ": targetID \"" + targetID + "\" does not reference a StabilityNotificationPlugin");
 			} else {
 				logger.warn(name + ": targetID \"" + targetID + "\" does not reference any registered Plugin");
 			}
@@ -268,7 +268,7 @@ public class StabilityMonitorProcessor extends AbstractPipelineStage implements 
 				}
 			}
 
-			StabilityWebhookPlugin p = plugin;
+			StabilityNotificationPlugin p = plugin;
 			if (p != null) {
 				boolean ok = p.notify(representative);
 				if (!ok) {

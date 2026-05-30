@@ -60,7 +60,7 @@ The configuration element for the StabilityExecPlugin is:
     id="StabilityExec"
     class="org.rsna.ctp.plugin.StabilityExecPlugin"
     command="C:/scripts/on-stable.cmd"
-    arguments="patientID={PatientID};studyUID={StudyInstanceUID};source=CTP"
+    arguments="-i=C:/input/{StudyInstanceUID} -o=C:/output --quiet"
     dryRun="no"
     minInterval="0"
     maxQueueSize="100"
@@ -73,7 +73,7 @@ where:
 1. name is any text to be used as a label on configuration and status pages.
 2. id is text to be used to uniquely identify the plugin.
 3. command is the command template to execute.
-4. arguments is a semicolon-separated list of key=value pairs.
+4. arguments is a whitespace-separated list of command-line argument templates.
 5. dryRun determines whether resolved commands are logged without execution. Values are yes and no. The default is no.
 6. minInterval is the minimum milliseconds between command starts. The default is 0.
 7. maxQueueSize is the queue capacity for pending executions. The default is 100.
@@ -85,9 +85,9 @@ Notes:
 1. Executions are queued and processed by one worker thread.
 2. ProcessBuilder is used directly; shell expansion is not performed.
 3. If the queue is full, requests are dropped and notify returns failure.
-4. Values in braces in command tokens and arguments values are resolved from the representative DICOM object.
+4. DICOM placeholders in command tokens and arguments use the same style as the DirectoryStorageService structure option, for example {StudyInstanceUID} or (0020,000D).
 5. If enable is no, notify returns success without queueing execution work.
-6. The current runtime parses only arguments. The template also exposes otherArguments, but that attribute is not currently consumed by code.
+6. The runtime does not support the old semicolon key=value argument syntax for StabilityExecPlugin.
 
 ## Standard Stages (Local Additions)
 

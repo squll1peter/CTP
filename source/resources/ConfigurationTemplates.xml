@@ -96,10 +96,7 @@ It is preferred because it works with dynamic IP addresses.
 				<helptext>Path (and optional base arguments) of the executable to run, e.g. /opt/scripts/notify.sh</helptext>
 			</attr>
 			<attr name="arguments" required="no" default="">
-				<helptext>Semicolon-delimited key=value pairs resolved dynamically from the representative DICOM object, where value is a DICOM keyword or tag, e.g. patientID=PatientID;studyUID=0020000D. Passed to the command as --key value flags.</helptext>
-			</attr>
-			<attr name="otherArguments" required="no" default="">
-				<helptext>Semicolon-delimited key=value static pairs always appended to the command, e.g. source=CTP;site=HOSP1. Passed as --key value flags after dynamic arguments.</helptext>
+				<helptext>Whitespace-delimited command-line argument templates. DICOM placeholders use DirectoryStorageService structure syntax, e.g. -i=/data/in/{StudyInstanceUID} --study=(0020,000D) --quiet.</helptext>
 			</attr>
 			<attr name="dryRun" required="no" default="no" options="yes|no">
 				<helptext>If yes, log the resolved command without executing it. Useful for verifying argument assembly during development.</helptext>
@@ -1743,4 +1740,3 @@ It is preferred because it works with dynamic IP addresses.
 	</StandardPipelines>
 
 </TemplateDefinitions>
-

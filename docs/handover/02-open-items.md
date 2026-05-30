@@ -5,21 +5,21 @@
 - Current SSL verification used an untrusted/self-signed trust path for browser testing.
 - Replace with CA-signed or enterprise-trusted certificate chain for production users.
 
-## Util Login/Auth Security Hardening
+## Util HTTP Security Hardening Follow-Up
 
-- Source review is complete in `13-stop-point-2026-05-30-util-security-review-plan.md`.
-- Immediate containment work is no longer just optional warning cleanup:
-  - remove or redact credential-bearing debug logs
-  - disable GET credential login, or gate it behind an explicit compatibility setting
-  - add session cookie security attributes
-  - replace predictable session ID generation
-- Confirm compatibility and deployment-policy decisions before coding redirect/proxy and legacy `RSNA` header changes.
+- Implementation progress through M4 and M5 is recorded in `18-stop-point-2026-05-30-util-http-security-m4-m5-progress.md`.
+- Remaining security work items:
+  - stabilize and test checkpoint `20` auth-gate behavior at the HTTP-handler layer
+  - add integration-style coverage for unsupported-method and internal-error structured security events
+  - perform manual browser validation of CSRF token round-trip on admin POST pages
+  - audit all `HttpUtil.getConnection` callers for any legacy HTTPS endpoints that now require explicit `getInsecureConnection(...)` compatibility mode
+  - remove or fully retire any now-unused legacy attack-log geolocation helper path
 
 ## Credential Hygiene
 
 - Remove fallback keystore password usage where possible and require environment-driven secret injection.
 - Continue reducing plaintext credential dependence in stage configuration.
-- Decide whether the legacy plaintext `RSNA` auth header is removed, restricted, or disabled by default.
+- Legacy plaintext `RSNA` auth header is now disabled by default; decide final deprecation/removal timeline.
 
 ## Performance Track
 
@@ -33,7 +33,6 @@
 
 ## Stable Notification Follow-Up
 
-- Decide whether `StabilityExecPlugin` should truly be a `StabilityMonitorProcessor` target.
-- If yes, refactor the processor to target a shared notification interface instead of `StabilityWebhookPlugin` only.
-- Align `ConfigurationTemplates.xml`, `docs/CTP-Delta-From-RSNA-MIRC-CTP.md`, and the handover examples with the current argument syntax: use `{DicomKeywordOrTag}` for DICOM-resolved values and bare values for literals.
-- Remove or implement the stale `otherArguments` template attribute. Current runtime parses `arguments` only.
+- Runtime now allows `StabilityExecPlugin` as a `StabilityMonitorProcessor` target through `StabilityNotificationPlugin`.
+- Runtime now uses whitespace-delimited command-line templates for `StabilityExecPlugin arguments`.
+- Remaining item: perform live validation of `StabilityExecPlugin arguments` with DirectoryStorageService-style placeholders in the active deployment config.

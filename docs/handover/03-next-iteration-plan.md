@@ -1,38 +1,43 @@
 # Next Iteration Plan
 
-## 1) SSL Production Readiness
+## 1) Auth Gate Stabilization
+
+- Use `20-stop-point-2026-05-30-util-http-handler-auth-gate.md` as the latest implementation baseline.
+- Keep global `requireAuthentication` enforcement in `HttpHandler`; keep `ServletSelector` routing-only.
+- Keep the unauthenticated public allowlist minimal and explicit: login flow, current login page asset `BaseStyles.css`, and `ping`.
+- Add or expand HTTP-handler tests for:
+  - unauthenticated protected paths returning `LoginServlet`
+  - authenticated protected paths reaching the selected servlet
+  - exact public allowlist paths bypassing the auth gate
+  - non-allowlisted static-looking paths remaining protected
+  - localhost `servicemanager` shutdown bypass
+  - remote shutdown remaining protected
+- Add integration-style coverage for unsupported-method and internal-error structured security events.
+- Run focused security tests, then `ant test`.
+
+## 2) Util Outbound HTTPS Caller Audit
+
+- Audit all `HttpUtil.getConnection(...)` call sites after secure-by-default change.
+- For legacy endpoints with non-trusted cert paths, migrate specific callers to explicit `HttpUtil.getInsecureConnection(...)` only when unavoidable.
+- Record each compatibility exception with owner and removal plan.
+
+## 3) SSL Production Readiness
 
 - Install trusted certificate and full chain.
 - Verify browser behavior on Chrome and Firefox with no warning interstitial.
 - Re-check login and logout flows on HTTPS only.
 
-## 2) Util Login/Auth Containment
+## 4) Authentication and LDAP Review
 
-- Execute M1 from `13-stop-point-2026-05-30-util-security-review-plan.md`.
-- Remove or redact credential-bearing debug logs.
-- Disable GET credential login unless a compatibility flag is explicitly approved.
-- Add `HttpOnly`, HTTPS-conditional `Secure`, and selected `SameSite` session cookie attributes.
-- Replace MD5/time-based session IDs with cryptographic random tokens.
-
-## 3) Authentication and LDAP Review
-
-- Decide the future of the legacy plaintext `RSNA` auth header.
+- Decide final deprecation/removal timeline for the legacy plaintext `RSNA` auth header (currently disabled by default).
 - Validate LDAP providerURL uses ldaps:// in all active deployments.
 - Confirm no plaintext secrets are committed in config snapshots.
 
-## 4) Redirect, Proxy, and Attack-Log Follow-Up
-
-- Confirm direct-to-app versus reverse-proxy deployment model.
-- Choose relative-only redirects or configured absolute redirect allowlist.
-- Move attack-log geolocation lookup out of synchronized request-path logging before adding richer event context.
-- Define brute-force observe/throttle/lockout defaults before implementing prevention controls.
-
 ## 5) Stable Notification Alignment
 
-- Decide whether command notifications are in scope for stable-group events.
-- If command notifications are in scope, introduce a small shared interface for notification plugins and let `StabilityMonitorProcessor` resolve either webhook or exec plugins through that interface.
-- If command notifications are not in scope, remove the drop-in alternative claim from templates and operator docs.
-- Fix examples to use current argument syntax and remove stale `otherArguments` examples unless runtime support is added.
+- Validate the live `StabilityExecPlugin` path using the active deployment config.
+- Confirm `arguments="-i=/.../{StudyInstanceUID} ..."` resolves the same DICOM placeholder style as `DirectoryStorageService structure`.
+- If runtime validation passes, rebuild any deployment package or installer artifact that must carry the updated template and jar.
 
 ## 6) Performance Continuation
 

@@ -25,14 +25,14 @@ import org.w3c.dom.Element;
 
 /**
  * A CTP Plugin that executes a local OS command on behalf of StabilityMonitorProcessor.
- * Arguments are configured as semicolon-delimited {@code key=value} pairs in the
- * {@code arguments} attribute.  A value wrapped in {@code {DicomKeyword}} (e.g.
- * {@code pid={PatientID}}) is resolved from the representative DicomObject at
- * notification time; a bare value (e.g. {@code source=CTP}) is used as a literal.
- * The same {@code {DicomKeyword}} substitution is applied to each token of the
- * {@code command} attribute, allowing the executable path or base arguments to
- * reference DICOM field values.  Executions are serialised through a bounded queue
- * and run by a single daemon worker thread.
+ * Arguments are configured as whitespace-delimited command-line templates in the
+ * {@code arguments} attribute. DICOM placeholders use the same form as the
+ * {@code DirectoryStorageService} {@code structure} option, e.g.
+ * {@code -i=/in/{StudyInstanceUID}} or {@code --study=(0020,000D)}. The same
+ * placeholder substitution is applied to each token of the {@code command}
+ * attribute, allowing the executable path or base arguments to reference DICOM
+ * field values. Executions are serialised through a bounded queue and run by a
+ * single daemon worker thread.
  *
  * <p>Configuration attributes:
  * <ul>
@@ -40,9 +40,9 @@ import org.w3c.dom.Element;
  *   <li>{@code name}          – display name</li>
  *   <li>{@code root}          – optional plugin working directory (inherited from AbstractPlugin)</li>
  *   <li>{@code command}       – command template; whitespace-delimited tokens may contain {@code {DicomKeyword}}</li>
- *   <li>{@code arguments}     – semicolon-delimited key=value pairs; values in {@code {…}} are resolved
- *                               from the DICOM object, bare values are literals,
- *                               e.g. {@code "pid={PatientID};suid={0020000D};source=CTP"}</li>
+ *   <li>{@code arguments}     – whitespace-delimited command-line argument templates; placeholders are
+ *                               resolved from the representative DICOM object,
+ *                               e.g. {@code "-i=/in/{StudyInstanceUID} -o=/out --quiet"}</li>
  *   <li>{@code dryRun}        – yes|no (default no): log the resolved command without executing it</li>
  *   <li>{@code minInterval}   – minimum milliseconds between command starts (default 0 = no throttle)</li>
  *   <li>{@code maxQueueSize}  – maximum pending tasks; excess notifications are dropped (default 100)</li>
@@ -50,20 +50,18 @@ import org.w3c.dom.Element;
  *   <li>{@code enable}        – yes|no (default yes)</li>
  * </ul>
  */
-public class StabilityExecPlugin extends AbstractPlugin {
+public class StabilityExecPlugin extends AbstractPlugin implements StabilityNotificationPlugin {
 
 	static final Logger logger = Logger.getLogger(StabilityExecPlugin.class);
-
-	private static final Pattern KEYWORD_PATTERN = Pattern.compile("\\{([^}]+)\\}");
 
 	private final boolean enable;
 	private final boolean dryRun;
 	private final String commandTemplate;
-	private final String[] argKeys;
-	private final String[] argValues;
+	private final String argumentsTemplate;
 	private final long minInterval;
 	private final int maxQueueSize;
 	private final File workingDir;
+	private final boolean workingDirValid;
 
 	private final ArrayBlockingQueue<List<String>> queue;
 
@@ -85,24 +83,7 @@ public class StabilityExecPlugin extends AbstractPlugin {
 		dryRun = element.getAttribute("dryRun").trim().equalsIgnoreCase("yes");
 
 		commandTemplate = element.getAttribute("command").trim();
-
-		// Parse arguments: semicolon-delimited key=value pairs.
-		// A value wrapped in {DicomKeyword} is resolved from the DICOM object at runtime;
-		// a bare value is used as a literal.  e.g. "pid={PatientID};suid={0020000D};source=CTP"
-		String argsAttr = element.getAttribute("arguments").trim();
-		if (!argsAttr.isEmpty()) {
-			String[] pairs = argsAttr.split(";");
-			argKeys   = new String[pairs.length];
-			argValues = new String[pairs.length];
-			for (int i = 0; i < pairs.length; i++) {
-				String[] parsed = parseConfiguredPair(pairs[i]);
-				argKeys[i]   = parsed[0];
-				argValues[i] = parsed[1];
-			}
-		} else {
-			argKeys   = new String[0];
-			argValues = new String[0];
-		}
+		argumentsTemplate = element.getAttribute("arguments").trim();
 
 		long mi = 0;
 		try { mi = Long.parseLong(element.getAttribute("minInterval").trim()); }
@@ -123,6 +104,7 @@ public class StabilityExecPlugin extends AbstractPlugin {
 		} else {
 			workingDir = null;
 		}
+		workingDirValid = validateWorkingDir(workingDir);
 
 		queue = new ArrayBlockingQueue<>(maxQueueSize);
 
@@ -131,49 +113,39 @@ public class StabilityExecPlugin extends AbstractPlugin {
 		}
 	}
 
-	/**
-	 * Split "key=value" or "key:value" into a two-element array.
-	 * Falls back to colon delimiter when no equals sign is present.
-	 */
-	private static String[] parseConfiguredPair(String pairText) {
-		String pair = pairText.trim();
-		int split = pair.indexOf('=');
-		if (split < 0) split = pair.indexOf(':');
-		if (split > 0) {
-			return new String[] {
-				pair.substring(0, split).trim(),
-				pair.substring(split + 1).trim()
-			};
+	private boolean validateWorkingDir(File dir) {
+		if (dir == null) return true;
+
+		if (!dir.exists()) {
+			logger.error(name + ": workingDir \"" + dir + "\" resolves to \""
+					+ dir.getAbsolutePath() + "\" but does not exist; command execution is disabled");
+			return false;
 		}
-		return new String[] { pair, "" };
+		if (!dir.isDirectory()) {
+			logger.error(name + ": workingDir \"" + dir + "\" resolves to \""
+					+ dir.getAbsolutePath() + "\" but is not a directory; command execution is disabled");
+			return false;
+		}
+		return true;
 	}
 
-	/**
-	 * Resolve a single argument value.
-	 * If {@code rawValue} is wrapped in {@code {…}}, the enclosed keyword or tag is
-	 * looked up in the representative DicomObject; otherwise the value is a literal.
-	 */
-	private static String resolveValue(String rawValue, DicomObject representative) {
-		if (rawValue.length() > 2
-				&& rawValue.charAt(0) == '{'
-				&& rawValue.charAt(rawValue.length() - 1) == '}') {
-			String tag = rawValue.substring(1, rawValue.length() - 1);
-			return (representative != null) ? representative.getElementValue(tag, "") : "";
-		}
-		return rawValue;
-	}
+	private static final String SINGLE_HEX_TAG = "[\\[\\(][0-9a-fA-F]{1,4}(\\[[^\\]]*\\])??[,]?[0-9a-fA-F]{1,4}[\\]\\)]";
+	private static final String SINGLE_KEYWORD_TAG = "\\{[A-Z][^\\}]*\\}";
+	private static final String SINGLE_TAG = "((" + SINGLE_HEX_TAG + ")|(" + SINGLE_KEYWORD_TAG + "))";
+	private static final Pattern TAG_PATTERN = Pattern.compile(SINGLE_TAG + "(::" + SINGLE_TAG + ")*");
 
 	/**
-	 * Substitute all {@code {keyword}} occurrences within a single command token.
-	 * Non-{keyword} text is preserved as-is.
+	 * Resolve a command-line template token using DirectoryStorageService-style
+	 * DICOM placeholders.
 	 */
-	private static String resolveKeywords(String token, DicomObject representative) {
-		if (!token.contains("{")) return token;
-		Matcher m = KEYWORD_PATTERN.matcher(token);
+	private static String resolveTemplate(String token, DicomObject representative) {
+		if (representative == null) return token;
+		Matcher m = TAG_PATTERN.matcher(token);
 		StringBuffer sb = new StringBuffer();
 		while (m.find()) {
-			String tag = m.group(1);
-			String value = (representative != null) ? representative.getElementValue(tag, "") : "";
+			String value = "";
+			try { value = representative.getElementString(m.group()); }
+			catch (Exception ignore) { }
 			m.appendReplacement(sb, Matcher.quoteReplacement(value));
 		}
 		m.appendTail(sb);
@@ -210,6 +182,7 @@ public class StabilityExecPlugin extends AbstractPlugin {
 	 * @param representative the first DicomObject received for the group; may be null
 	 * @return true if the command was enqueued; false if the queue was full (dropped)
 	 */
+	@Override
 	public boolean notify(DicomObject representative) {
 		if (!enable) {
 			logger.debug(name + ": disabled, skipping notification");
@@ -219,16 +192,20 @@ public class StabilityExecPlugin extends AbstractPlugin {
 			logger.error(name + ": command is not configured, skipping notification");
 			return false;
 		}
-
-		// Apply {keyword} substitution to each command token, then add --key value args
-		String[] cmdTokens = commandTemplate.split("\\s+");
-		List<String> tokens = new ArrayList<>(cmdTokens.length + argKeys.length * 2);
-		for (String t : cmdTokens) {
-			tokens.add(resolveKeywords(t, representative));
+		if (!workingDirValid) {
+			logger.error(name + ": workingDir is invalid, skipping notification");
+			return false;
 		}
-		for (int i = 0; i < argKeys.length; i++) {
-			tokens.add("--" + argKeys[i]);
-			tokens.add(resolveValue(argValues[i], representative));
+
+		// Apply DICOM placeholder substitution to command and argument template tokens.
+		String[] cmdTokens = commandTemplate.split("\\s+");
+		String[] argTokens = argumentsTemplate.isEmpty() ? new String[0] : argumentsTemplate.split("\\s+");
+		List<String> tokens = new ArrayList<>(cmdTokens.length + argTokens.length);
+		for (String t : cmdTokens) {
+			tokens.add(resolveTemplate(t, representative));
+		}
+		for (String t : argTokens) {
+			tokens.add(resolveTemplate(t, representative));
 		}
 
 		lastTriggeredTime = System.currentTimeMillis();
@@ -324,6 +301,12 @@ public class StabilityExecPlugin extends AbstractPlugin {
 		sb.append("<tr><td>Enabled:</td><td>").append(enable ? "yes" : "no").append("</td></tr>");
 		sb.append("<tr><td>Dry Run:</td><td>").append(dryRun ? "yes" : "no").append("</td></tr>");
 		sb.append("<tr><td>Command:</td><td>").append(htmlEscape(commandTemplate)).append("</td></tr>");
+		sb.append("<tr><td>Working directory:</td><td>")
+			.append(workingDir != null ? htmlEscape(workingDir.getAbsolutePath()) : "CTP current directory")
+			.append("</td></tr>");
+		sb.append("<tr><td>Working directory valid:</td><td>")
+			.append(workingDirValid ? "yes" : "no")
+			.append("</td></tr>");
 		sb.append("<tr><td>Min Interval (ms):</td><td>").append(minInterval).append("</td></tr>");
 		sb.append("<tr><td>Max Queue Size:</td><td>").append(maxQueueSize).append("</td></tr>");
 		sb.append("<tr><td>Queue depth:</td><td>").append(queue.size()).append("</td></tr>");

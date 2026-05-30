@@ -47,7 +47,7 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 	 */
 	public DicomAuditLogger(Element element) {
 		super(element);
-		level = element.getAttribute("level").trim();
+		level = element.getAttribute("level").trim().toLowerCase();
 		objectCacheID = element.getAttribute("cacheID").trim();
 		auditLogID = element.getAttribute("auditLogID").trim();
 
@@ -174,11 +174,14 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 			String entry = XmlUtil.toPrettyString(root);
 			logger.debug("AuditLog entry:\n"+entry);
 			try { 
-				Integer id = auditLog.addEntry(entry, "xml", patientID, studyInstanceUID, sopInstanceUID); 
+				Integer id = auditLog.addEntry(entry, "xml",
+											  indexedPatientID(patientID),
+											  indexedStudyUID(studyInstanceUID),
+											  indexedObjectUID(sopInstanceUID));
 				auditLog.addEntryReference(id, 
-										   dicomObject.getPatientID(), 
-										   dicomObject.getStudyInstanceUID(), 
-										   dicomObject.getSOPInstanceUID());
+										   indexedPatientID(dicomObject.getPatientID()),
+										   indexedStudyUID(dicomObject.getStudyInstanceUID()),
+										   indexedObjectUID(dicomObject.getSOPInstanceUID()));
 			}
 			catch (Exception ex) { logger.warn("Unable to insert the AuditLog entry"); }
 		}
@@ -224,12 +227,29 @@ public class DicomAuditLogger extends AbstractPipelineStage implements Processor
 			}
 			String entry = XmlUtil.toPrettyString(root);
 			logger.debug("AuditLog entry:\n"+entry);
-			try { auditLog.addEntry(entry, "xml", patientID, studyInstanceUID, sopInstanceUID); }
+			try {
+				auditLog.addEntry(entry, "xml",
+								  indexedPatientID(patientID),
+								  indexedStudyUID(studyInstanceUID),
+								  indexedObjectUID(sopInstanceUID));
+			}
 			catch (Exception ex) { logger.warn("Unable to insert the AuditLog entry"); }
 		}
 		catch (Exception ex) {
 			logger.warn("Unable to construct the AuditLog entry", ex);
 		}
+	}
+
+	private String indexedPatientID(String patientID) {
+		return patientID;
+	}
+
+	private String indexedStudyUID(String studyInstanceUID) {
+		return level.equals("patient") ? null : studyInstanceUID;
+	}
+
+	private String indexedObjectUID(String sopInstanceUID) {
+		return (level.equals("patient") || level.equals("study")) ? null : sopInstanceUID;
 	}
 
 	/**

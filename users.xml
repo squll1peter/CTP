@@ -1,0 +1,15 @@
+<users
+    bootstrapLocalOnly="true"
+    mode="digest">
+    <user
+        password="pbkdf2$100000$h2qKtKSvf8yBLHEG7zhk+A==$X6A5nTnnotuQ6S1Yn6SFgbk/O3Z2aYWOv5Q65ufzkkA="
+        username="admin">
+        <role>admin</role>
+    </user>
+    <user
+        password="pbkdf2$100000$CjK4LW0wb7EsWsrnVwE+pw==$4oLvNKrmXWFc+bVlIRcRtZWHfaAZtT+ge3xbtbOvxFA="
+        username="king">
+        <role>admin</role>
+        <role>shutdown</role>
+    </user>
+</users>

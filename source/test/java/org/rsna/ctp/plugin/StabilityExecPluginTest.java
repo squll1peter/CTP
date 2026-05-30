@@ -6,6 +6,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.File;
+import java.nio.file.Files;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -90,20 +92,20 @@ public class StabilityExecPluginTest {
     }
 
     @Test
-    public void dynamicArguments_parsedFromArguments() throws Exception {
+    public void dynamicArguments_parsedFromArgumentsTemplate() throws Exception {
         // Construction succeeds; enable=no so no execution
         StabilityExecPlugin p = new StabilityExecPlugin(
                 buildElement("command",   successCommand(),
-                             "arguments", "pid={PatientID};suid={0020000D}",
+                             "arguments", "-p={PatientID} --study=(0020,000D)",
                              "enable",    "no"));
         assertTrue(p.notify(null));
     }
 
     @Test
-    public void staticArguments_parsedFromArguments() throws Exception {
+    public void staticArguments_parsedFromArgumentsTemplate() throws Exception {
         StabilityExecPlugin p = new StabilityExecPlugin(
                 buildElement("command",        successCommand(),
-                             "arguments",      "source=CTP;site=HOSP1",
+                             "arguments",      "--source=CTP --site=HOSP1",
                              "enable",         "no"));
         assertTrue(p.notify(null));
     }
@@ -119,6 +121,21 @@ public class StabilityExecPluginTest {
                              "enable",  "no"));
         assertTrue("disabled notify must return true", p.notify(null));
         assertTrue("queue must remain empty", p.getStatusHTML().contains("Queue depth:</td><td>0"));
+    }
+
+    @Test
+    public void notify_invalidWorkingDir_returnsFalseWithoutEnqueue() throws Exception {
+        File tempRoot = Files.createTempDirectory("stability-exec-test").toFile();
+        File missingDir = new File(tempRoot, "missing");
+        StabilityExecPlugin p = new StabilityExecPlugin(
+                buildElement("command", successCommand(),
+                             "workingDir", missingDir.getAbsolutePath()));
+
+        assertFalse("invalid workingDir must prevent notification enqueue", p.notify(null));
+        assertTrue("status must expose invalid workingDir",
+                p.getStatusHTML().contains("Working directory valid:</td><td>no"));
+        assertTrue("queue must remain empty", p.getStatusHTML().contains("Queue depth:</td><td>0"));
+        tempRoot.delete();
     }
 
     @Test
@@ -172,42 +189,32 @@ public class StabilityExecPluginTest {
     // ------------------------------------------------------------------
 
     @Test
-    public void notify_buildsCorrectCommandTokens_withDynamicAndStaticArgs() throws Exception {
+    public void notify_buildsCorrectCommandTokens_fromArgumentTemplates() throws Exception {
         DicomObject representative = mock(DicomObject.class);
-        when(representative.getElementValue("PatientID", "")).thenReturn("P123");
-        when(representative.getElementValue("0020000D",  "")).thenReturn("1.2.3");
+        when(representative.getElementString("{PatientID}")).thenReturn("P123");
+        when(representative.getElementString("(0020,000D)")).thenReturn("1.2.3");
 
         StabilityExecPlugin p = new StabilityExecPlugin(
             buildElement("command",        echoCommand(),
-                             "arguments",      "pid={PatientID};suid={0020000D};source=CTP",
+                             "arguments",      "-p={PatientID} --study=(0020,000D) --source=CTP",
                              "dryRun",         "yes"));
         p.start();
         try {
             assertTrue(p.notify(representative));
             waitForExecution(p, 3000);
             String html = p.getStatusHTML();
-            assertTrue("must contain --pid P123",    html.contains("--pid P123"));
-            assertTrue("must contain --suid 1.2.3",  html.contains("--suid 1.2.3"));
-            assertTrue("must contain --source CTP",  html.contains("--source CTP"));
+            assertTrue("must contain -p=P123",          html.contains("-p=P123"));
+            assertTrue("must contain --study=1.2.3",    html.contains("--study=1.2.3"));
+            assertTrue("must contain --source=CTP",     html.contains("--source=CTP"));
         } finally {
             p.shutdown();
         }
     }
 
     @Test
-    public void notify_fallsBackToColonDelimiterInArguments() throws Exception {
-        // Legacy colon syntax still works, including keyword-wrapped values.
-        StabilityExecPlugin p = new StabilityExecPlugin(
-                buildElement("command",   successCommand(),
-                             "arguments", "pid:{PatientID}",
-                             "enable",    "no"));
-        assertTrue(p.notify(null));
-    }
-
-    @Test
     public void notify_substitutesDicomKeywordInsideCommandTokens() throws Exception {
         DicomObject representative = mock(DicomObject.class);
-        when(representative.getElementValue("PatientID", "")).thenReturn("P123");
+        when(representative.getElementString("{PatientID}")).thenReturn("P123");
 
         StabilityExecPlugin p = new StabilityExecPlugin(
             buildElement("command", echoCommand() + " patient={PatientID}",
@@ -293,6 +300,8 @@ public class StabilityExecPluginTest {
         assertTrue(html.contains("Enabled:"));
         assertTrue(html.contains("Dry Run:"));
         assertTrue(html.contains("Command:"));
+        assertTrue(html.contains("Working directory:"));
+        assertTrue(html.contains("Working directory valid:"));
         assertTrue(html.contains("Min Interval (ms):"));
         assertTrue(html.contains("Max Queue Size:"));
         assertTrue(html.contains("Queue depth:"));
@@ -313,17 +322,17 @@ public class StabilityExecPluginTest {
         p.start();
         try {
             DicomObject representative = mock(DicomObject.class);
-            when(representative.getElementValue("PatientID", "")).thenReturn("A&B");
+            when(representative.getElementString("{PatientID}")).thenReturn("A&B");
             StabilityExecPlugin p2 = new StabilityExecPlugin(
                     buildElement("command",   echoCommand(),
-                     "arguments", "pid={PatientID}",
+                     "arguments", "--pid={PatientID}",
                                  "dryRun",    "yes"));
             p2.start();
             try {
                 assertTrue(p2.notify(representative));
                 waitForExecution(p2, 3000);
                 String html2 = p2.getStatusHTML();
-                assertFalse("raw & must not appear in HTML",   html2.contains("--pid A&B\""));
+                assertFalse("raw & must not appear in HTML",   html2.contains("--pid=A&B\""));
                 assertTrue("& must be escaped to &amp;",       html2.contains("A&amp;B"));
             } finally {
                 p2.shutdown();

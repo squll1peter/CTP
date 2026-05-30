@@ -1,0 +1,105 @@
+body {
+	padding: 0;
+	margin: 0;
+	overflow: hidden;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	background: #edf3fa;
+}
+
+div.closebox {
+	float: right;
+	margin: 2;
+}
+
+h1 {
+	text-align: center;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-size: large;
+	margin-top: 12px;
+	margin-bottom: 5px;
+	color: #1f5f94;
+}
+
+h2 {
+	margin-top: 0;
+	text-align: center;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-size: medium;
+	color: #1f5f94;
+}
+
+p.instruction {
+	text-align: left;
+	font-size: 10pt;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: bold;
+	margin-left: 10%;
+	margin-right: 10%;
+	margin-top: 6;
+	margin-bottom: 6;
+	padding: 0;
+}
+
+p.center {
+	margin-top: 0px;
+	margin-left: 10%;
+	margin-right: 10%;
+}
+
+table {
+	width:100%;
+}
+
+td.text-field {
+	text-align: left;
+	font-size: 11pt;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	width:80%;
+	text-align:left;
+}
+
+td.text-label {
+	text-align: left;
+	font-size: 11pt;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	width:20%;
+	text-align:left;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+input.fullwidth {
+	width:100%
+}
+
+div.entryselect {
+	margin-top: 0px;
+	margin-left: 10%;
+	margin-right: 10%;
+	margin-bottom: 10px;
+	border: 1px solid #d6e1ee;
+	padding: 3px;
+	height: 100px;
+	overflow: auto;
+	background: white;
+	font-family: monospace;
+	font-size: 12pt;
+}
+
+div.entryselect span {
+	cursor: hand;
+}
+
+div.entrydisplay {
+	margin-top: 0px;
+	margin-left: 10%;
+	margin-right: 10%;
+	border: 1px solid #d6e1ee;
+	padding: 3px;
+	height: 30px;
+	overflow: auto;
+	background: white;
+	font-family: monospace;
+	font-size: 12pt;
+}

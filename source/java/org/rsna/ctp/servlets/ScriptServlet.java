@@ -98,7 +98,7 @@ public class ScriptServlet extends CTPServlet {
 	 * This method interprets the posted parameters as a new configuration
 	 * for the script file and updates the file accordingly.
 	 * It then returns an HTML page containing a new form constructed
-	 * from the new contents of the file.
+	 * from the new contents of the file, with a confirmation popup.
 	 * <p>
 	 * The contents of the form are constructed from the text
 	 * of the file, not from a Properties object because
@@ -137,7 +137,7 @@ public class ScriptServlet extends CTPServlet {
 				//Make a new page from the new data and send it out
 				res.disableCaching();
 				res.setContentType("html");
-				res.write(getScriptPage(p, s, f, scriptFile));
+				res.write(getScriptPage(p, s, f, scriptFile, true));
 				res.send();
 				return;
 			}
@@ -213,7 +213,12 @@ public class ScriptServlet extends CTPServlet {
 
 	//Create an HTML page containing the form for configuring the file.
 	private String getScriptPage(int p, int s, int f, File scriptFile) {
+		return getScriptPage(p, s, f, scriptFile, false);
+	}
+
+	private String getScriptPage(int p, int s, int f, File scriptFile, boolean updated) {
 		return responseHead("Script Editor", scriptFile.getAbsolutePath())
+				+ (updated ? "<script>alert('Script updated.');</script>\n" : "")
 				+ makeForm(p, s, f, scriptFile)
 					+ responseTail();
 	}

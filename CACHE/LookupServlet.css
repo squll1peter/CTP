@@ -1,0 +1,73 @@
+body {
+	margin-top:0;
+	margin-right:0;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	background: #eef4fb;
+}
+
+h1 {
+	text-align:center;
+	margin-top:12px;
+	color: #1f5f94;
+}
+
+h2 {
+	text-align:center;
+	font-size:12pt;
+	margin:0;
+	padding:0;
+	font-weight:bold;
+	color: #1f5f94;
+}
+
+input {
+	width:200px;
+	font-family: monospace;
+	border: 1px solid #93afca;
+	border-radius: 3px;
+}
+
+.button {
+	width:250px;
+}
+
+p {
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+}
+
+td.list {
+	background:white;
+}
+
+th {
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	text-align: left;
+	font-weight: bold;
+	background: #2f6fa5;
+	color: #ffffff;
+	padding: 6px 10px;
+}
+
+div.currentEntries {
+	height: 100px;
+	padding: 5px;
+	margin-top: 10px;
+	background: #ffffff;
+	border: 1px solid #d6e1ee;
+}
+
+table.newEntries td {
+	font-family: monospace;
+}
+
+table.currentEntries td {
+	font-family: monospace;
+}
+
+div.currentEntries p {
+	margin-bottom:3px;
+	font-weight:bold;
+	font-family: "Segoe UI", "Noto Sans", Arial, sans-serif;
+	font-weight: bold;
+	font-size: 14pt;
+}
